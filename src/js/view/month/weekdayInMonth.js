@@ -113,13 +113,11 @@ WeekdayInMonth.prototype.render = function(viewModel) {
     if (!this.options.visibleWeeksCount) {
         setIsOtherMonthFlag(baseViewModel.dates, this.options.renderMonth, viewModel.theme);
     }
-
+    /* eslint-disable no-debugger, no-console */
+    console.log(baseViewModel);
     container.innerHTML = baseTmpl(baseViewModel);
 
-    scheduleContainer = domutil.find(
-        config.classname('.weekday-schedules'),
-        container
-    );
+    scheduleContainer = domutil.find(config.classname('.weekday-schedules'), container);
 
     if (!scheduleContainer) {
         return;
@@ -127,11 +125,7 @@ WeekdayInMonth.prototype.render = function(viewModel) {
 
     scheduleContainer.innerHTML = scheduleTmpl(baseViewModel);
 
-    common.setAutoEllipsis(
-        config.classname('.weekday-schedule-title'),
-        container,
-        true
-    );
+    common.setAutoEllipsis(config.classname('.weekday-schedule-title'), container, true);
 };
 
 WeekdayInMonth.prototype._beforeDestroy = function() {

@@ -28,6 +28,8 @@ var mmin = Math.min;
  * @property {string} [id] - The unique schedule id depends on calendar id
  * @property {string} calendarId - The unique calendar id
  * @property {string} [title] - The schedule title
+ * @property {Array.<string>} [customSelection] - The custom selection List
+ * @property {string} [customTextInput] - The custom text input which is text/plain
  * @property {string} [body] - The schedule body text which is text/plain
  * @property {string|TZDate} [start] - The start time. It's 'string' for input. It's 'TZDate' for output like event handler.
  * @property {string|TZDate} [end] - The end time. It's 'string' for input. It's 'TZDate' for output like event handler.
@@ -1775,6 +1777,8 @@ Calendar.prototype.setCalendars = function(calendars) {
  * @param {Schedule} schedule - The preset {@link Schedule} data
  */
 Calendar.prototype.openCreationPopup = function(schedule) {
+    /* eslint-disable no-debugger, no-console */
+    console.log('Before Opening Popup from Calendar.Js Module');
     if (this._openCreationPopup) {
         this._openCreationPopup(schedule);
     }
@@ -1852,8 +1856,8 @@ function _createWeekView(controller, container, dragHandler, options, viewName) 
  * @param {Base} controller - controller
  * @param {HTMLElement} container - container element
  * @param {Drag} dragHandler - global drag handler
- * @param {object} options - options for week view
- * @returns {Month} month view instance
+ * @param {object} options - options for month view
+ * @returns {{view: Month, showCreationPopup: showCreationPopup, refresh: refresh, hideMoreView: hideMoreView, openCreationPopup: openCreationPopup}} month view instance
  * @private
  */
 function _createMonthView(controller, container, dragHandler, options) {

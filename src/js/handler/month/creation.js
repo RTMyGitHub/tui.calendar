@@ -233,6 +233,7 @@ MonthCreation.prototype._onDragEnd = function(dragEndEvent) {
 
 /**
  * Dblclick event handler
+ * Changes for Schindler == Set isAllDay flag to "true" by default
  * @fires {MonthCreation#monthCreationDragstart}
  * @param {MouseEvent} e - Native MouseEvent
  */
@@ -252,7 +253,7 @@ MonthCreation.prototype._onDblClick = function(e) {
     this._createSchedule({
         start: range.start,
         end: range.end,
-        isAllDay: false,
+        isAllDay: true,
         triggerEvent: eventData.triggerEvent
     });
 
@@ -261,12 +262,15 @@ MonthCreation.prototype._onDblClick = function(e) {
 
 /**
  * Click event handler
+ * Changes for Schindler == Set isAllDay flag to "true" by default
  * @fires {MonthCreation#monthCreationDragstart}
  * @param {MouseEvent} e - Native MouseEvent
  */
 MonthCreation.prototype._onClick = function(e) {
     var self = this;
     var eventData, range;
+    /* eslint-disable no-debugger, no-console */
+    console.log('Before Opening Popup Using Click');
 
     if (!isElementWeekdayGrid(e.target) || this._disableClick) {
         return;
@@ -284,7 +288,7 @@ MonthCreation.prototype._onClick = function(e) {
             self._createSchedule({
                 start: range.start,
                 end: range.end,
-                isAllDay: false,
+                isAllDay: true,
                 triggerEvent: eventData.triggerEvent
             });
         }

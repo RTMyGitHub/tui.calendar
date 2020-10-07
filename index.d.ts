@@ -195,7 +195,7 @@ export interface ISchedule {
     customStyle?: string;
     raw?: {
       [propName: string]: string | number | boolean | object | null;
-    }
+    };
     state?: string;
 }
 

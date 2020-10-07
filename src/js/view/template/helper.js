@@ -454,6 +454,9 @@ var helpers = {
     },
     'popupDelete-tmpl': function() {
         return 'Delete';
+    },
+    'testText-tmpl': function() {
+        return 'This is a new text template message';
     }
 };
 

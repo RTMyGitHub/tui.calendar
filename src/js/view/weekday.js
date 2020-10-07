@@ -23,11 +23,7 @@ var config = require('../config'),
  *  view.
  */
 function Weekday(options, container) {
-    container = domutil.appendHTMLElement(
-        'div',
-        container,
-        config.classname('weekday')
-    );
+    container = domutil.appendHTMLElement('div', container, config.classname('weekday'));
 
     /**
      * @type {object}

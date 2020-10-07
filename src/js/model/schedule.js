@@ -25,6 +25,9 @@ var SCHEDULE_CATEGORY = {
     /** task */
     TASK: 'task',
 
+    /** half-day schedule */
+    HALFDAY: 'halfday',
+
     /** all-day schedule */
     ALLDAY: 'allday',
 
@@ -62,6 +65,12 @@ function Schedule() {
      * @type {boolean}
      */
     this.isAllDay = false;
+
+    /**
+     * is schedule is all day schedule?
+     * @type {boolean}
+     */
+    this.isHalfDay = false;
 
     /**
      * schedule start
@@ -160,6 +169,18 @@ function Schedule() {
     this.location = '';
 
     /**
+     * Custom Selection
+     * @type {string}
+     */
+    this.customSelection = '';
+
+    /**
+     * Custom Text Input
+     * @type {string}
+     */
+    this.customTextInput = '';
+
+    /**
      * attendees
      * @type {Array.<string>}
      */
@@ -233,13 +254,16 @@ Schedule.prototype.init = function(options) {
     if (options.category === SCHEDULE_CATEGORY.ALLDAY) {
         options.isAllDay = true;
     }
+    if (options.category === SCHEDULE_CATEGORY.HALFDAY) {
+        options.isHalfDay = true;
+    }
 
     this.id = options.id || '';
     this.title = options.title || '';
     this.body = options.body || '';
     this.isAllDay = util.isExisty(options.isAllDay) ? options.isAllDay : false;
+    this.isHalfDay = util.isExisty(options.isHalfDay) ? options.isHalfDay : false;
     this.isVisible = util.isExisty(options.isVisible) ? options.isVisible : true;
-
     this.color = options.color || this.color;
     this.bgColor = options.bgColor || this.bgColor;
     this.dragBgColor = options.dragBgColor || this.dragBgColor;
@@ -249,6 +273,8 @@ Schedule.prototype.init = function(options) {
     this.dueDateClass = options.dueDateClass || '';
     this.customStyle = options.customStyle || '';
     this.location = options.location || '';
+    this.customSelection = options.customSelection || '';
+    this.customTextInput = options.customTextInput || '';
     this.attendees = options.attendees || [];
     this.recurrenceRule = options.recurrenceRule || '';
     this.isPrivate = options.isPrivate || false;
@@ -322,6 +348,10 @@ Schedule.prototype.equals = function(schedule) {
     }
 
     if (this.isAllDay !== schedule.isAllDay) {
+        return false;
+    }
+
+    if (this.isHalfDay !== schedule.isHalfDay) {
         return false;
     }
 

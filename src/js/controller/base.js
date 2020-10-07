@@ -220,6 +220,10 @@ Base.prototype.updateSchedule = function(schedule, options) {
         schedule.set('location', options.location);
     }
 
+    if (options.reason) {
+        schedule.set('reason', options.reason);
+    }
+
     if (options.state) {
         schedule.set('state', options.state);
     }

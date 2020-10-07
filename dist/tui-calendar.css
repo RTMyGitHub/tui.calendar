@@ -1,6 +1,6 @@
 /*!
  * TOAST UI Calendar
- * @version 1.12.13 | Tue Apr 28 2020
+ * @version 1.12.13 | Tue Oct 06 2020
  * @author NHN FE Development Lab <dl_javascript@nhn.com>
  * @license MIT
  */
@@ -26,9 +26,6 @@
 }
 .tui-full-calendar-invisible span {
   visibility: hidden;
-}
-.tui-full-calendar-clear {
-  zoom: 1;
 }
 .tui-full-calendar-clear:after {
   content: '';
@@ -670,7 +667,13 @@
   min-height: 40px;
 }
 .tui-full-calendar-section-calendar {
-  width: 176px;
+  width: 400px;
+}
+.tui-full-calendar-section-custom-selection {
+  width: 400px;
+}
+.tui-full-calendar-section-custom-text-input {
+  width: 600px;
 }
 .tui-full-calendar-section-calendar.tui-full-calendar-hide {
   height: 21px;
@@ -725,6 +728,11 @@
   padding: 0 0 0 8px;
   cursor: pointer;
 }
+.tui-full-calendar-popup-section-item.tui-full-calendar-section-halfday {
+  border: none;
+  padding: 0 0 0 8px;
+  cursor: pointer;
+}
 .tui-full-calendar-popup-section-item.tui-full-calendar-section-location {
   display: block;
 }
@@ -734,7 +742,13 @@
 .tui-full-calendar-section-allday .tui-full-calendar-icon.tui-full-calendar-ic-checkbox {
   margin: 0;
 }
+.tui-full-calendar-section-halfday .tui-full-calendar-icon.tui-full-calendar-ic-checkbox {
+  margin: 0;
+}
 .tui-full-calendar-popup-section-item.tui-full-calendar-section-allday .tui-full-calendar-content {
+  padding-left: 4px;
+}
+.tui-full-calendar-popup-section-item.tui-full-calendar-section-halfday .tui-full-calendar-content {
   padding-left: 4px;
 }
 .tui-full-calendar-section-state {
@@ -762,9 +776,6 @@
 .tui-full-calendar-popup-section-item .tui-full-calendar-icon {
   position: relative;
 }
-.tui-full-calendar-icon.tui-full-calendar-ic-title {
-  top: 2px;
-}
 .tui-full-calendar-popup-section-item .tui-full-calendar-content {
   text-align: left;
   display: inline-block;
@@ -774,7 +785,13 @@
   padding-left: 8px;
 }
 .tui-full-calendar-section-calendar .tui-full-calendar-dropdown-button .tui-full-calendar-content {
-  width: 125px;
+  width: 200px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  top: -1px;
+}
+.tui-full-calendar-section-custom-selection .tui-full-calendar-custom-dropdown-button .tui-full-calendar-content {
+  width: 200px;
   text-overflow: ellipsis;
   overflow: hidden;
   top: -1px;
@@ -792,10 +809,21 @@
 .tui-full-calendar-dropdown {
   position: relative;
 }
+.tui-full-calendar-custom-dropdown {
+  position: relative;
+}
 .tui-full-calendar-dropdown:hover .tui-full-calendar-dropdown-button {
   border: 1px solid #bbb;
 }
+.tui-full-calendar-custom-dropdown:hover .tui-full-calendar-custom-dropdown-button {
+  border: 1px solid #bbb;
+}
 .tui-full-calendar-dropdown-button.tui-full-calendar-popup-section-item {
+  height: 32px;
+  font-size: 0;
+  top: -1px;
+}
+.tui-full-calendar-custom-dropdown-button.tui-full-calendar-popup-section-item {
   height: 32px;
   font-size: 0;
   top: -1px;
@@ -804,6 +832,10 @@
   background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAHlJREFUKBVjYBgFOEOAEVkmPDxc89+/f6eAYjzI4kD2FyYmJrOVK1deh4kzwRggGiQBVJCELAZig8SQNYHEmEEEMrh69eo1HR0dfqCYJUickZGxf9WqVf3IakBsFBthklpaWmVA9mEQhrJhUoTp0NBQCRAmrHL4qgAAuu4cWZOZIGsAAAAASUVORK5CYII=) no-repeat;
 }
 .dropdown.open .tui-full-calendar-dropdown-arrow,
+.tui-full-calendar-open .tui-full-calendar-dropdown-arrow {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAIFJREFUKBVjYBj+gBmXF2NiYiTV1dV5rl279gWbGiZsgg0NDSw/f/5cCZRbBWJjU4PVRjExsR6g4nAgln/z5g3v1atXd6JrxtAYHh4e+v///z4khZa6urrXgJqvIYkxMCJzgJo0//37dwooxoMsDmR/YWJiMlu5cuV1NPFRLrYQAADMVCaUtbG7XwAAAABJRU5ErkJggg==) no-repeat;
+}
+.custom-dropdown.open .tui-full-calendar-dropdown-arrow,
 .tui-full-calendar-open .tui-full-calendar-dropdown-arrow {
   background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAIFJREFUKBVjYBj+gBmXF2NiYiTV1dV5rl279gWbGiZsgg0NDSw/f/5cCZRbBWJjU4PVRjExsR6g4nAgln/z5g3v1atXd6JrxtAYHh4e+v///z4khZa6urrXgJqvIYkxMCJzgJo0//37dwooxoMsDmR/YWJiMlu5cuV1NPFRLrYQAADMVCaUtbG7XwAAAABJRU5ErkJggg==) no-repeat;
 }
@@ -816,15 +848,31 @@
   border-top: none;
   border-radius: 0 0 2px 2px;
   width: 100%;
+  display: none;
+}
+.tui-full-calendar-custom-dropdown-menu {
+  position: absolute;
+  top: 31px;
+  padding: 4px 0;
+  background-color: #fff;
+  border: 1px solid #d5d5d5;
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+  width: 100%;
+  display: none;
 }
 .tui-full-calendar-dropdown:hover .tui-full-calendar-dropdown-menu {
   border: 1px solid #bbb;
   border-top: none;
 }
-.tui-full-calendar-dropdown-menu {
-  display: none;
+.tui-full-calendar-custom-dropdown:hover .tui-full-calendar-custom-dropdown-menu {
+  border: 1px solid #bbb;
+  border-top: none;
 }
 .tui-full-calendar-open .tui-full-calendar-dropdown-menu {
+  display: block;
+}
+.tui-full-calendar-open .tui-full-calendar-custom-dropdown-menu {
   display: block;
 }
 .tui-full-calendar-dropdown-menu-item {
@@ -832,7 +880,15 @@
   border: none;
   cursor: pointer;
 }
+.tui-full-calendar-custom-dropdown-menu-item {
+  height: 30px;
+  border: none;
+  cursor: pointer;
+}
 .tui-full-calendar-section-calendar .tui-full-calendar-dropdown-menu-item {
+  width: 100%;
+}
+.tui-full-calendar-section-custom-selection .tui-full-calendar-custom-dropdown-menu-item {
   width: 100%;
 }
 .tui-full-calendar-section-state .tui-full-calendar-dropdown-menu-item {
@@ -841,7 +897,13 @@
 .tui-full-calendar-dropdown-menu-item:hover {
   background-color: rgba(81,92,230,0.05);
 }
+.tui-full-calendar-custom-dropdown-menu-item:hover {
+  background-color: rgba(81,92,230,0.05);
+}
 .tui-full-calendar-dropdown-menu-item .tui-full-calendar-content {
+  line-height: 30px;
+}
+.tui-full-calendar-custom-dropdown-menu-item .tui-full-calendar-content {
   line-height: 30px;
 }
 .tui-full-calendar-button.tui-full-calendar-popup-close {
@@ -1027,8 +1089,6 @@ input[type='checkbox'].tui-full-calendar-checkbox-round + span {
   height: 12px;
   background-size: 12px;
   position: relative;
-}
-.tui-full-calendar-popup-detail .tui-full-calendar-icon {
   margin-right: 8px;
 }
 .tui-full-calendar-popup-detail .tui-full-calendar-icon.tui-full-calendar-ic-location-b {
@@ -1135,9 +1195,6 @@ input[type='checkbox'].tui-full-calendar-checkbox-round + span {
 }
 .tui-full-calendar-icon.tui-full-calendar-ic-private {
   background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAKpJREFUKBVjYCATMKLri46Olvn9+3fX////HUByjIyMB1hZWcuWLl36BFktikaQpl+/fl0EKhBCVgRkv2NjY9NH1syErABkE1TTdqBCWRAG8reDxKBycOUoGmHOA2pIA5kOwiA2SDVMDqYTRSNQUBIkgewkJDZYDqYR7sewsLCtQFO9YBLYaGBAbVu1apU3SA5uIyFNIMXIauAaQRKkgBGlERTURATOVpgaABRQQOK46wEAAAAAAElFTkSuQmCC) no-repeat;
-}
-.tui-full-calendar-icon.tui-full-calendar-ic-public {
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAKdJREFUKBVjYCATMKLri46Olvn9+3fX////HUByjIyMB1hZWcuWLl36BFktikaQpl+/fl0EKhBCVgRkv2NjY9NH1syErABkE1TTdqBCWRAG8reDxKBycOUoGmHOA2pIA5kOwiA2SDVMDq4TmREaGvofhJHFcLHhfgwLC9sKNNULl0KQODCgtq1atcobxIY7lZAmkGJkNXCNIAlSwIjSCApqIgJnK0wNALoOPwSpOcq0AAAAAElFTkSuQmCC) no-repeat;
 }
 .tui-full-calendar-icon.tui-full-calendar-ic-close {
   background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAJRJREFUKBXFkNERhCAMREUbuEKohzq0Eq2DDq6Da4B60KezDORkxj+ZwchmX0IYhtdWCGFl9y5g82NtzDnPdzAaudo76ZBS+nrvPxiInMkJcs5tMcZFfqcfxdqIRiELof+BiIJPg+mExmpmvKRn3zKj7OrG9Y79szPL14A1xEP0Hgy4gBZS5R7czHj3ehSgOzkVeyfuGrBw/WLm0hsAAAAASUVORK5CYII=) no-repeat;

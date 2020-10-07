@@ -238,6 +238,9 @@ function createMonthView(baseController, layoutContainer, dragHandler, options) 
             monthView.vLayout.refresh();
         },
         openCreationPopup: function(schedule) {
+            /* eslint-disable no-debugger, no-console */
+            console.log('Before Opening Popup');
+            console.log(schedule);
             if (createView && creationHandler) {
                 creationHandler.invokeCreationClick(Schedule.create(schedule));
             }

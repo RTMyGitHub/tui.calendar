@@ -38,7 +38,7 @@ function Base(options) {
             return 'allday';
         }
 
-        return model.category;
+        return 'allday';
     };
 
     /**
@@ -153,7 +153,9 @@ Base.prototype.createSchedules = function(dataList, silent) {
 Base.prototype.updateSchedule = function(schedule, options) {
     var start = options.start || schedule.start;
     var end = options.end || schedule.end;
-
+    /* eslint-disable no-debugger, no-console */
+    console.log('Schedule Update in Base Controller');
+    console.log(schedule, options);
     options = options || {};
 
     if (['milestone', 'task', 'allday', 'time'].indexOf(options.category) > -1) {
@@ -167,25 +169,27 @@ Base.prototype.updateSchedule = function(schedule, options) {
     if (!util.isUndefined(options.isAllDay)) {
         schedule.set('isAllDay', options.isAllDay);
     }
-
+    if (!util.isUndefined(options.isHalfDay)) {
+        schedule.set('isHalfDay', options.isHalfDay);
+    }
     if (!util.isUndefined(options.calendarId)) {
         schedule.set('calendarId', options.calendarId);
     }
-
+    if (!util.isUndefined(options.customSelection)) {
+        schedule.set('customSelection', options.customSelection);
+    }
+    if (!util.isUndefined(options.customTextInput)) {
+        schedule.set('customTextInput', options.customTextInput);
+    }
     if (options.title) {
         schedule.set('title', options.title);
     }
-
     if (options.body) {
         schedule.set('body', options.body);
     }
 
     if (options.start || options.end) {
-        if (schedule.isAllDay) {
-            schedule.setAllDayPeriod(start, end);
-        } else {
-            schedule.setTimePeriod(start, end);
-        }
+        schedule.setAllDayPeriod(start, end);
     }
 
     if (options.color) {
@@ -219,11 +223,6 @@ Base.prototype.updateSchedule = function(schedule, options) {
     if (options.location) {
         schedule.set('location', options.location);
     }
-
-    if (options.reason) {
-        schedule.set('reason', options.reason);
-    }
-
     if (options.state) {
         schedule.set('state', options.state);
     }
@@ -238,7 +237,7 @@ Base.prototype.updateSchedule = function(schedule, options) {
     /**
      * @event Base#updateSchedule
      */
-    this.fire('updateSchedule');
+    this.fire('updateSchedule', schedule);
 
     return schedule;
 };
@@ -370,7 +369,6 @@ Base.prototype.findByDateRange = function(start, end) {
         ymd = dformat(date, 'YYYYMMDD');
         matrix = ownMatrix[ymd];
         viewModels = result[ymd] = common.createScheduleCollection();
-
         if (matrix && matrix.length) {
             viewModels.add.apply(viewModels, util.map(matrix, function(id) {
                 return ScheduleViewModel.create(ownSchedules[id]);

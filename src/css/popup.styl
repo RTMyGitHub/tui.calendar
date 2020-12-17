@@ -5,7 +5,7 @@
   clear: both
 
 .{css-prefix}popup-container
-  min-width: 474px
+  min-width: 600px
   box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.1)
   background-color: #ffffff
   border: solid 1px #d5d5d5
@@ -22,8 +22,13 @@
 .{css-prefix}section-custom-selection
   width: 400px
 
+.{css-prefix}required
+  box-shadow: 0 0 0 0.05em #F40000 !important;
+  border: 1px solid #D40000 !important;
+  border-radius: 2px !important;
+
 .{css-prefix}section-custom-text-input
-  width: 600px
+  width: 580px
 
 .{css-prefix}section-calendar.{css-prefix}hide
   height: 21px
@@ -144,6 +149,9 @@
   overflow: hidden
   top: -1px
 
+.{css-prefix}section-custom-selection .{css-prefix}custom-dropdown-button .{css-prefix}pl
+  color: #c1c1c1
+
 .{css-prefix}popup-section-item input
   border: none
   height: 30px
@@ -166,12 +174,12 @@
 .{css-prefix}custom-dropdown:hover .{css-prefix}custom-dropdown-button
   border: 1px solid #bbbbbb
 
-.{css-prefix}dropdown-button.{css-prefix}popup-section-item
+.{css-prefix}dropdown-button .{css-prefix}popup-section-item
   height: 32px
   font-size: 0
   top: -1px
 
-.{css-prefix}custom-dropdown-button.{css-prefix}popup-section-item
+.{css-prefix}custom-dropdown-button .{css-prefix}popup-section-item
   height: 32px
   font-size: 0
   top: -1px
@@ -353,7 +361,6 @@
     border-color: #bbbbbb
     color: #333333
 
-
 .{css-prefix}button:active
   background: #f9f9f9
   color: #333333
@@ -435,8 +442,8 @@ input[type='checkbox'].{css-prefix}checkbox-round + span
   top: 0
 
 .{css-prefix}popup-detail .{css-prefix}popup-container
-  width: 301px
-  min-width: 301px
+  width: 325px
+  min-width: 325px
   padding-bottom: 0
 
 .{css-prefix}popup-detail .{css-prefix}icon
@@ -462,9 +469,9 @@ input[type='checkbox'].{css-prefix}checkbox-round + span
   top: -1px
 
 .{css-prefix}popup-detail .{css-prefix}content
-  line-height: 24px
   height: 24px
   font-size: 12px
+  font-weight: bold
   line-height: 2
 
 .{css-prefix}popup-detail .{css-prefix}section-header

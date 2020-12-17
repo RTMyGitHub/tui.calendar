@@ -37,9 +37,10 @@ DayGridSchedule.prototype.render = function(viewModel) {
     var baseViewModel;
 
     baseViewModel = this.getBaseViewModel(viewModel);
-
     container.innerHTML = tmpl(baseViewModel);
-
+    /* eslint-disable no-debugger, no-console */
+    console.log('Schedule rendered on Day View');
+    console.log(baseViewModel);
     this.fire('afterRender', baseViewModel);
 };
 

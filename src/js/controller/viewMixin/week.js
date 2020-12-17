@@ -265,7 +265,9 @@ var Week = {
             viewModels,
             collisionGroups,
             matrices;
-
+        /* eslint-disable no-debugger, no-console */
+        console.log('Preparing View Model for All Day Grid');
+        console.log(viewModelColl);
         if (!viewModelColl || !viewModelColl.length) {
             return [];
         }

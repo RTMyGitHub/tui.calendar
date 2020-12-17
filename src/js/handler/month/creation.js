@@ -271,7 +271,7 @@ MonthCreation.prototype._onClick = function(e) {
     var eventData, range;
     /* eslint-disable no-debugger, no-console */
     console.log('Before Opening Popup Using Click');
-
+    console.log(e);
     if (!isElementWeekdayGrid(e.target) || this._disableClick) {
         return;
     }
@@ -284,7 +284,9 @@ MonthCreation.prototype._onClick = function(e) {
             self.fire('monthCreationClick', eventData);
 
             range = self._adjustStartAndEndTime(new TZDate(eventData.date), new TZDate(eventData.date));
-
+            /* eslint-disable no-debugger, no-console */
+            console.log('Month Creation click Fire');
+            console.log(eventData);
             self._createSchedule({
                 start: range.start,
                 end: range.end,

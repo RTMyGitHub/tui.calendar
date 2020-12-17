@@ -1,15 +1,19 @@
 <div class="{{CSS_PREFIX}}popup">
     <div class="{{CSS_PREFIX}}popup-container">
-        <div class="{{CSS_PREFIX}}popup-section {{CSS_PREFIX}}dropdown {{CSS_PREFIX}}close {{CSS_PREFIX}}section-calendar{{#unless calendars.length}} {{CSS_PREFIX}}hide{{/unless}}">
+        <div class="{{CSS_PREFIX}}popup-section {{CSS_PREFIX}}dropdown {{CSS_PREFIX}}close {{CSS_PREFIX}}section-calendar{{#unless
+                calendars.length}} {{CSS_PREFIX}}hide{{/unless}}">
             <button class="{{CSS_PREFIX}}button {{CSS_PREFIX}}dropdown-button {{CSS_PREFIX}}popup-section-item">
-                <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}calendar-dot" style="background-color: {{selectedCal.bgColor}}"></span>
+                <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}calendar-dot"
+                      style="background-color: {{selectedCal.bgColor}}"></span>
                 <span id="{{CSS_PREFIX}}schedule-calendar" class="{{CSS_PREFIX}}content">{{selectedCal.name}}</span>
                 <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}dropdown-arrow"></span>
             </button>
             <ul class="{{CSS_PREFIX}}dropdown-menu" style="z-index: {{zIndex}}">
                 {{#each calendars}}
-                    <li class="{{CSS_PREFIX}}popup-section-item {{CSS_PREFIX}}dropdown-menu-item" data-calendar-id="{{id}}">
-                        <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}calendar-dot" style="background-color: {{bgColor}}"></span>
+                    <li class="{{CSS_PREFIX}}popup-section-item {{CSS_PREFIX}}dropdown-menu-item"
+                        data-calendar-id="{{id}}">
+                        <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}calendar-dot"
+                              style="background-color: {{bgColor}}"></span>
                         <span class="{{CSS_PREFIX}}content">{{name}}</span>
                     </li>
                 {{/each}}
@@ -17,13 +21,16 @@
         </div>
         <div class="{{CSS_PREFIX}}popup-section {{CSS_PREFIX}}custom-dropdown {{CSS_PREFIX}}close {{CSS_PREFIX}}section-custom-selection">
             <button class="{{CSS_PREFIX}}button {{CSS_PREFIX}}custom-dropdown-button {{CSS_PREFIX}}popup-section-item">
-                <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}calendar-dot" style="background-color: #000000"></span>
-                <span id="{{CSS_PREFIX}}schedule-custom-selection" class="{{CSS_PREFIX}}content">{{customSelection}}</span>
+                <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}ic-title"></span>
+                <span id="{{CSS_PREFIX}}schedule-custom-selection"
+                      class="{{CSS_PREFIX}}content {{#fi customSelection '==='
+                                                         'Reason For Out Of Office'}} {{CSS_PREFIX}}pl {{/fi}}">{{customSelection}}</span>
                 <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}dropdown-arrow"></span>
             </button>
             <ul class="{{CSS_PREFIX}}custom-dropdown-menu" style="z-index: {{zIndex}}">
                 {{#each customSelectionList}}
-                    <li class="{{CSS_PREFIX}}popup-section-item {{CSS_PREFIX}}custom-dropdown-menu-item" data-reason-id="{{reason}}">
+                    <li class="{{CSS_PREFIX}}popup-section-item {{CSS_PREFIX}}custom-dropdown-menu-item"
+                        data-reason-id="{{reason}}">
                         <span class="{{CSS_PREFIX}}content">{{reason}}</span>
                     </li>
                 {{/each}}
@@ -31,8 +38,9 @@
         </div>
         <div class="{{CSS_PREFIX}}popup-section">
             <div class="{{CSS_PREFIX}}popup-section-item {{CSS_PREFIX}}section-custom-text-input">
-                <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}ic-title"></span>
-                <input id="{{CSS_PREFIX}}schedule-custom-text-input" class="{{CSS_PREFIX}}content" placeholder="{{popupCustomTextInputPlaceholder-tmpl}}"/>
+                <span class="{{CSS_PREFIX}}icon {{CSS_PREFIX}}ic-desc"></span>
+                <input id="{{CSS_PREFIX}}schedule-custom-text-input" class="{{CSS_PREFIX}}content" size="70"
+                       value="{{customTextInput}}" placeholder="{{popupCustomTextInputPlaceholder-tmpl}}"/>
             </div>
         </div>
         <div class="{{CSS_PREFIX}}popup-section">

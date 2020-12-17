@@ -85,6 +85,9 @@ ScheduleDetailPopup.prototype._onClickEditSchedule = function(target) {
     var className = config.classname('popup-edit');
 
     if (domutil.hasClass(target, className) || domutil.closest(target, '.' + className)) {
+        /* eslint-disable no-debugger, no-console */
+        console.log('Before Updating Calendar using the Edit Button.  See Schedule Data below');
+        console.log(this._schedule);
         this.fire('beforeUpdateSchedule', {
             schedule: this._schedule,
             triggerEventName: 'click',
@@ -125,8 +128,10 @@ ScheduleDetailPopup.prototype.render = function(viewModel) {
     }));
     layer.show();
     this._setPopupPositionAndArrowDirection(viewModel.event);
-
     this._schedule = viewModel.schedule;
+    /* eslint-disable no-debugger, no-console */
+    console.log('See Schedule Data Below that was sent to Detail Popup.js');
+    console.log(this._schedule);
     this._calendar = viewModel.calendar;
 
     util.debounce(function() {

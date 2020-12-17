@@ -29,7 +29,9 @@ var mmin = Math.min;
 function Month(options, container, controller) {
     var theme = controller ? controller.theme : null;
     var monthOption;
-
+    /* eslint-disable no-debugger, no-console */
+    console.log('Month Options before extending');
+    console.log(options);
     options = options || {};
     monthOption = options ? options.month : {};
 
@@ -53,6 +55,9 @@ function Month(options, container, controller) {
     /**
      * @type {string}
      */
+    /* eslint-disable no-debugger, no-console */
+    console.log('Month Option before extending');
+    console.log(monthOption);
     this.options = util.extend({
         scheduleFilter: function(schedule) {
             return Boolean(schedule.isVisible);
@@ -73,7 +78,7 @@ function Month(options, container, controller) {
             }
         }
     }, monthOption);
-
+    console.log(this.options);
     this.options.grid.header = util.extend({
         height: 34
     }, util.pick(monthOption, 'grid', 'header'));

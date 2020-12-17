@@ -23,9 +23,14 @@ var MAX_WEEK_OF_MONTH = 6;
  * @extends {View}
  * @param {HTMLElement} container - container element
  * @param {Array.<Calendar>} calendars - calendar list used to create new schedule
+ * @param {boolean} isUserAAAdmin - If the User Logged in is an Agile Apps Admin
  * @param {boolean} usageStatistics - GA tracking options in Calendar
  */
-function ScheduleCreationPopup(container, calendars, usageStatistics) {
+function ScheduleCreationPopup(container, calendars, isUserAAAdmin, usageStatistics) {
+    var popUpCalendars;
+    /* eslint-disable no-debugger, no-console */
+    console.log('Init a Popup Instance');
+    console.log(isUserAAAdmin);
     View.call(this, container);
     /**
      * @type {FloatingLayer}
@@ -37,6 +42,7 @@ function ScheduleCreationPopup(container, calendars, usageStatistics) {
      * @type {object}
      */
     this._viewModel = null;
+    this.isUserAAAdmin = isUserAAAdmin;
     this._selectedCal = null;
     this._customSelection = null;
     this._schedule = null;
@@ -51,7 +57,18 @@ function ScheduleCreationPopup(container, calendars, usageStatistics) {
         {'reason': 'Sick'},
         {'reason': 'Training'}
     ];
-    this.calendars = calendars;
+    if (!this.isUserAAAdmin) {
+        popUpCalendars = JSON.parse(JSON.stringify(calendars));
+        popUpCalendars.forEach(function(calendar, index, object) {
+            if (calendar.name === 'Holidays') {
+                console.log(index);
+                object.splice(index, 1);
+            }
+        });
+        this.calendars = popUpCalendars;
+    } else {
+        this.calendars = calendars;
+    }
     this._focusedDropdown = null;
     this._customFocusedDropdown = null;
     this._usageStatistics = usageStatistics;
@@ -107,8 +124,6 @@ ScheduleCreationPopup.prototype.destroy = function() {
  */
 ScheduleCreationPopup.prototype._onClick = function(clickEvent) {
     var target = domevent.getEventTarget(clickEvent);
-    /* eslint-disable no-debugger, no-console */
-    console.log(target);
     util.forEach(this._onClickListeners, function(listener) {
         return !listener(target);
     });
@@ -121,7 +136,6 @@ ScheduleCreationPopup.prototype._onClick = function(clickEvent) {
  */
 ScheduleCreationPopup.prototype._closePopup = function(target) {
     var className = config.classname('popup-close');
-
     if (domutil.hasClass(target, className) || domutil.closest(target, '.' + className)) {
         this.hide();
 
@@ -145,7 +159,6 @@ ScheduleCreationPopup.prototype._toggleDropdownMenuView = function(target) {
     if (!dropdownBtn) {
         return false;
     }
-
     if (domutil.hasClass(dropdownBtn.parentNode, config.classname('open'))) {
         this._closeDropdownMenuView(dropdownBtn.parentNode);
     } else {
@@ -164,11 +177,9 @@ ScheduleCreationPopup.prototype._toggleDropdownMenuView = function(target) {
 ScheduleCreationPopup.prototype._toggleCustomDropdownMenuView = function(target) {
     var customDropDownClassName = config.classname('custom-dropdown-button');
     var customDropDownBtn = domutil.hasClass(target, customDropDownClassName) ? target : domutil.closest(target, '.' + customDropDownClassName);
-
     if (!customDropDownBtn) {
         return false;
     }
-
     if (domutil.hasClass(customDropDownBtn.parentNode, config.classname('open'))) {
         this._closeCustomDropdownMenuView(customDropDownBtn.parentNode);
     } else {
@@ -183,9 +194,6 @@ ScheduleCreationPopup.prototype._toggleCustomDropdownMenuView = function(target)
  * @param {HTMLElement} dropdown - dropdown element that has a opened dropdown menu
  */
 ScheduleCreationPopup.prototype._closeDropdownMenuView = function(dropdown) {
-    /* eslint-disable no-debugger, no-console */
-    console.log(dropdown);
-    console.log('Closing Dropdown');
     dropdown = dropdown || this._focusedDropdown;
     if (dropdown) {
         domutil.removeClass(dropdown, config.classname('open'));
@@ -198,9 +206,6 @@ ScheduleCreationPopup.prototype._closeDropdownMenuView = function(dropdown) {
  * @param {HTMLElement} dropdown - dropdown element that has a opened dropdown menu
  */
 ScheduleCreationPopup.prototype._closeCustomDropdownMenuView = function(dropdown) {
-    /* eslint-disable no-debugger, no-console */
-    console.log(dropdown);
-    console.log('Closing Custom Dropdown');
     dropdown = dropdown || this._customFocusedDropdown;
     if (dropdown) {
         domutil.removeClass(dropdown, config.classname('open'));
@@ -237,19 +242,13 @@ ScheduleCreationPopup.prototype._selectDropdownMenuItem = function(target) {
     var contentClassName = config.classname('content');
     var selectedItem = domutil.hasClass(target, itemClassName) ? target : domutil.closest(target, '.' + itemClassName);
     var bgColor, title, dropdown, dropdownBtn;
-
     if (!selectedItem) {
-        /* eslint-disable no-debugger, no-console */
-        console.log('No Calendar Selected');
-
         return false;
     }
-
     bgColor = domutil.find('.' + iconClassName, selectedItem).style.backgroundColor || 'transparent';
     title = domutil.find('.' + contentClassName, selectedItem).innerHTML;
     dropdown = domutil.closest(selectedItem, config.classname('.dropdown'));
     dropdownBtn = domutil.find(config.classname('.dropdown-button'), dropdown);
-
     domutil.find('.' + contentClassName, dropdownBtn).innerText = title;
     if (domutil.hasClass(dropdown, config.classname('section-calendar'))) {
         domutil.find('.' + iconClassName, dropdownBtn).style.backgroundColor = bgColor;
@@ -257,7 +256,6 @@ ScheduleCreationPopup.prototype._selectDropdownMenuItem = function(target) {
             return cal.id === domutil.getData(selectedItem, 'calendarId');
         });
     }
-
     domutil.removeClass(dropdown, config.classname('open'));
 
     return true;
@@ -272,21 +270,21 @@ ScheduleCreationPopup.prototype._selectCustomDropdownMenuItem = function(target)
     var customItemClassName = config.classname('custom-dropdown-menu-item');
     var customSelectedItem = domutil.hasClass(target, customItemClassName) ? target : domutil.closest(target, '.' + customItemClassName);
     var contentClassName = config.classname('content');
-    var title, customDropdown, customDropdownBtn;
-
+    var title, titlePl, customDropdown, customDropdownBtn;
     if (!customSelectedItem) {
-        /* eslint-disable no-debugger, no-console */
-        console.log('No Reason Selected');
-
         return false;
     }
     customDropdown = domutil.closest(customSelectedItem, config.classname('.custom-dropdown'));
     title = domutil.find('.' + contentClassName, customSelectedItem).innerHTML;
     customDropdownBtn = domutil.find(config.classname('.custom-dropdown-button'), customDropdown);
-
-    domutil.find('.' + contentClassName, customDropdownBtn).innerText = title;
+    titlePl = domutil.find('.' + contentClassName, customDropdownBtn);
+    titlePl.innerText = title;
     if (domutil.hasClass(customDropdown, config.classname('section-custom-selection'))) {
         this._customSelection = domutil.getData(customSelectedItem, 'reasonId');
+    }
+    if (title !== 'Reason For Out Of Office') {
+        domutil.removeClass(customDropdownBtn, config.classname('required'));
+        domutil.removeClass(titlePl, config.classname('pl'));
     }
     domutil.removeClass(customDropdown, config.classname('open'));
 
@@ -305,7 +303,6 @@ ScheduleCreationPopup.prototype._toggleIsAllDayOrHalfDay = function(target) {
     var allDaySection = domutil.hasClass(target, allDayClassName) ? target : domutil.closest(target, '.' + allDayClassName);
     var halfDaySection = domutil.hasClass(target, halfDayClassName) ? target : domutil.closest(target, '.' + halfDayClassName);
     var allDayCheckbox, halfDayCheckbox;
-
     if (allDaySection || halfDaySection) {
         allDayCheckbox = domutil.get(cssPrefix + 'schedule-allday');
         halfDayCheckbox = domutil.get(cssPrefix + 'schedule-halfday');
@@ -326,7 +323,6 @@ ScheduleCreationPopup.prototype._toggleIsAllDayOrHalfDay = function(target) {
 ScheduleCreationPopup.prototype._toggleIsPrivate = function(target) {
     var className = config.classname('section-private');
     var privateSection = domutil.hasClass(target, className) ? target : domutil.closest(target, '.' + className);
-
     if (privateSection) {
         if (domutil.hasClass(privateSection, config.classname('public'))) {
             domutil.removeClass(privateSection, config.classname('public'));
@@ -351,14 +347,7 @@ ScheduleCreationPopup.prototype._onClickSaveSchedule = function(target) {
     var className = config.classname('popup-save');
     var cssPrefix = config.cssPrefix;
     // var title;
-    var customSelection;
-    var customTextInput;
-    var startDate;
-    var endDate;
-    var rangeDate;
-    var form;
-    var isAllDay;
-    var isHalfDay;
+    var customSelection, customTextInput, startDate, endDate, rangeDate, form, isAllDay, isHalfDay, calendarName;
 
     if (!domutil.hasClass(target, className) && !domutil.closest(target, '.' + className)) {
         return false;
@@ -369,24 +358,23 @@ ScheduleCreationPopup.prototype._onClickSaveSchedule = function(target) {
     endDate = new TZDate(this.rangePicker.getEndDate()).toLocalTime();
     customSelection = domutil.get(cssPrefix + 'schedule-custom-selection');
     customTextInput = domutil.get(cssPrefix + 'schedule-custom-text-input');
+    calendarName = this._selectedCal ? this._selectedCal.name : null;
     /* eslint-disable no-debugger, no-console */
-    console.log(customSelection.innerText);
-    console.log(customTextInput.value);
-    if (!this._validateForm(customSelection, customTextInput, startDate, endDate)) {
-        if (!customTextInput.value) {
-            customTextInput.focus();
-        }
-
+    console.log('Before Saving Schedule, Printing time');
+    console.log(startDate);
+    console.log(endDate);
+    console.log(calendarName);
+    if (!this._validateForm(customSelection, customTextInput, startDate, endDate, calendarName)) {
         return false;
     }
-
     isAllDay = !!domutil.get(cssPrefix + 'schedule-allday').checked;
     isHalfDay = !!domutil.get(cssPrefix + 'schedule-halfday').checked;
     rangeDate = this._getRangeDate(startDate, endDate, isAllDay);
 
     form = {
         calendarId: this._selectedCal ? this._selectedCal.id : null,
-        /* title: title,
+        /*
+        title: title,
         location: domutil.get(cssPrefix + 'schedule-location'),
         state: domutil.get(cssPrefix + 'schedule-state').innerText,
         isPrivate: !domutil.hasClass(domutil.get(cssPrefix + 'schedule-private'), config.classname('public')),
@@ -419,6 +407,9 @@ ScheduleCreationPopup.prototype.render = function(viewModel) {
     var layer = this.layer;
     var self = this;
     var boxElement, guideElements;
+    /* eslint-disable no-debugger, no-console */
+    console.log('Initial View Model');
+    console.log(viewModel);
     viewModel.zIndex = this.layer.zIndex + 5;
     viewModel.calendars = calendars;
     viewModel.customSelectionList = this._customSelectionList;
@@ -436,9 +427,10 @@ ScheduleCreationPopup.prototype.render = function(viewModel) {
         boxElement = guideElements.length ? guideElements[0] : null;
     }
     /* eslint-disable no-debugger, no-console */
+    console.log('View Model after changes');
     console.log(viewModel);
     layer.setContent(tmpl(viewModel));
-    this._createDatepicker(viewModel.start, viewModel.end, viewModel.isAllDay);
+    this._createDatepicker(viewModel.start, viewModel.end, true);
     layer.show();
 
     if (boxElement) {
@@ -453,44 +445,53 @@ ScheduleCreationPopup.prototype.render = function(viewModel) {
 /**
  * Make view model for edit mode
  * @param {object} viewModel - original view model from 'beforeCreateEditPopup'
- * @returns {object} - edit mode view model
+ * @returns {{isAllDay: *, calendars: Array<Calendar>, isEditMode: *, selectedCal: null, start: *, end: *, customSelectionList, customSelection, customTextInput, id: *, title: *, isHalfDay: (boolean|{boolean}), zIndex: number}} - edit mode view model
  */
 ScheduleCreationPopup.prototype._makeEditModeData = function(viewModel) {
     var schedule = viewModel.schedule;
-    var title, isPrivate, location, startDate, endDate, isAllDay, state;
+    // eslint-disable-next-line no-unused-vars
+    var title, isPrivate, location, startDate, endDate;
+    // eslint-disable-next-line no-unused-vars
+    var isAllDay, isHalfDay, state, customSelectionList, customSelection, customTextInput;
     // var raw = schedule.raw || {};
     var calendars = this.calendars;
-
     var id = schedule.id;
     /*
-    title = schedule.title;
     isPrivate = raw['class'] === 'private';
     location = schedule.location;
     state = schedule.state;
     */
+    title = schedule.title;
     startDate = schedule.start;
     endDate = schedule.end;
     isAllDay = schedule.isAllDay;
+    isHalfDay = schedule.isHalfDay;
+    customTextInput = schedule.customTextInput;
     viewModel.selectedCal = this._selectedCal = common.find(this.calendars, function(cal) {
         return cal.id === viewModel.schedule.calendarId;
     });
-    viewModel.customSelection = this._customSelection;
     this._schedule = schedule;
+    customSelectionList = this._customSelectionList;
+    viewModel.customSelection = this._customSelection = schedule.customSelection;
 
     return {
         id: id,
         selectedCal: this._selectedCal,
         calendars: calendars,
         title: title,
-        isPrivate: isPrivate,
-        location: location,
+        // isPrivate: isPrivate,
+        // location: location,
         isAllDay: isAllDay,
-        state: state,
+        isHalfDay: isHalfDay,
+        // state: state,
         start: startDate,
         end: endDate,
-        raw: {
+        customSelectionList: customSelectionList,
+        customSelection: this._customSelection,
+        customTextInput: customTextInput,
+        /* raw: {
             class: isPrivate ? 'private' : 'public'
-        },
+        }, */
         zIndex: this.layer.zIndex + 5,
         isEditMode: this._isEditMode
     };
@@ -763,7 +764,19 @@ ScheduleCreationPopup.prototype.refresh = function() {
  * @param {Array.<Calendar>} calendars - calendar list
  */
 ScheduleCreationPopup.prototype.setCalendars = function(calendars) {
-    this.calendars = calendars || [];
+    var popupCalendars;
+    if (!this.isUserAAAdmin) {
+        popupCalendars = JSON.parse(JSON.stringify(calendars));
+        popupCalendars.forEach(function(calendar, index, object) {
+            if (calendar.name === 'Holidays') {
+                console.log(index);
+                object.splice(index, 1);
+            }
+        });
+        this.calendars = popupCalendars || [];
+    } else {
+        this.calendars = calendars || [];
+    }
 };
 
 /**
@@ -772,25 +785,23 @@ ScheduleCreationPopup.prototype.setCalendars = function(calendars) {
  * @param {string} customTextInput Custom Input Text of then entered schedule
  * @param {TZDate} startDate start date time from range picker
  * @param {TZDate} endDate end date time from range picker
+ * @param {string} calendarName Name of the Calendar selected on the schedule
  * @returns {boolean} Returns false if the form is not valid for submission.
  */
-ScheduleCreationPopup.prototype._validateForm = function(customSelection, customTextInput, startDate, endDate) {
-    if (customSelection.innerText === 'Reason For Out Of Office') {
-        return false;
-    }
-    if (!customTextInput.value) {
-        return false;
-    }
+// eslint-disable-next-line max-len
+ScheduleCreationPopup.prototype._validateForm = function(customSelection, customTextInput, startDate, endDate, calendarName) {
+    var customDropDownBtnClassName = config.classname('.custom-dropdown-button');
+    var customDropDownBtn = domutil.find(customDropDownBtnClassName);
+    if (customSelection.innerText === 'Reason For Out Of Office' && calendarName !== 'Holidays') {
+        domutil.addClass(customDropDownBtn, config.classname('required'));
 
+        return false;
+    }
     if (!startDate && !endDate) {
         return false;
     }
 
-    if (datetime.compare(startDate, endDate) === 1) {
-        return false;
-    }
-
-    return true;
+    return datetime.compare(startDate, endDate) !== 1;
 };
 
 /**
@@ -822,11 +833,12 @@ ScheduleCreationPopup.prototype._getRangeDate = function(startDate, endDate, isA
     calendarId: {string},
     title: {string},
     customSelection: {string},
-    customTexInput : {string},
+    customTextInput : {string},
     location: {string},
     start: {TZDate},
     end: {TZDate},
     isAllDay: {boolean},
+    isHalfDay: {boolean},
     state: {string},
     isPrivate: {boolean}
   }} form schedule input form data
@@ -834,7 +846,7 @@ ScheduleCreationPopup.prototype._getRangeDate = function(startDate, endDate, isA
 ScheduleCreationPopup.prototype._onClickUpdateSchedule = function(form) {
     var changes = common.getScheduleChanges(
         this._schedule,
-        ['calendarId', 'customSelection', 'customTextInput', 'start', 'end', 'isAllDay'],
+        ['calendarId', 'customSelection', 'customTextInput', 'start', 'end', 'isAllDay', 'isHalfDay'],
         {
             calendarId: form.calendarId,
             customSelection: form.customSelection.value,
@@ -846,7 +858,8 @@ ScheduleCreationPopup.prototype._onClickUpdateSchedule = function(form) {
             */
             start: form.start,
             end: form.end,
-            isAllDay: form.isAllDay
+            isAllDay: form.isAllDay,
+            isHalfDay: form.isHalfDay
         }
     );
 
@@ -895,8 +908,9 @@ ScheduleCreationPopup.prototype._onClickCreateSchedule = function(form) {
         calendarId: form.calendarId,
         customSelection: form.customSelection.innerText,
         customTextInput: form.customTextInput.value,
-        /*  state: form.state,
+        /*
         title: form.title.value,
+        state: form.state,
         location: form.location.value,
         raw: {
             class: form.isPrivate ? 'private' : 'public'

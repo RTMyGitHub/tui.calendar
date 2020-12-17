@@ -86,8 +86,7 @@ var DEFAULT_PANELS = [
 
 /* eslint-disable complexity*/
 module.exports = function(baseController, layoutContainer, dragHandler, options, viewName) {
-    var panels = [],
-        vpanels = [];
+    var panels = [], vpanels = [];
     var weekView, dayNameContainer, dayNameView, vLayoutContainer, vLayout;
     var createView, onSaveNewSchedule, onSetCalendars, lastVPanel;
     var detailView, onShowDetailPopup, onDeleteSchedule, onShowEditPopup, onEditSchedule;
@@ -97,13 +96,13 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
         'milestone': util.isArray(taskView) ? util.inArray('milestone', taskView) >= 0 : taskView,
         'task': util.isArray(taskView) ? util.inArray('task', taskView) >= 0 : taskView,
         'allday': util.isArray(scheduleView) ? util.inArray('allday', scheduleView) >= 0 : scheduleView,
+        'halfday': util.isArray(scheduleView) ? util.inArray('halfday', scheduleView) >= 0 : scheduleView,
         'time': util.isArray(scheduleView) ? util.inArray('time', scheduleView) >= 0 : scheduleView
     };
 
     // Make panels by view sequence and visibilities
     util.forEach(DEFAULT_PANELS, function(panel) {
         var name = panel.name;
-
         panel = util.extend({}, panel);
         panels.push(panel);
 
@@ -178,7 +177,6 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
         if (!panel.show) {
             return;
         }
-
         if (panel.type === 'daygrid') {
             /**********
              * Schedule panel by Grid
@@ -187,9 +185,7 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
             view.on('afterRender', function(viewModel) {
                 vLayout.getPanelByName(name).setHeight(null, viewModel.height);
             });
-
             weekView.addChild(view);
-
             util.forEach(handlers, function(type) {
                 if (!options.isReadOnly || type === 'click') {
                     weekView.handler[type][name] =
@@ -233,17 +229,14 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
 
     // binding create schedules event
     if (options.useCreationPopup) {
-        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.usageStatistics);
+        // eslint-disable-next-line max-len
+        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.usageStatistics);
 
         onSaveNewSchedule = function(scheduleData) {
             util.extend(scheduleData, {
                 useCreationPopup: true
             });
-            if (scheduleData.isAllDay) {
-                weekView.handler.creation.allday.fire('beforeCreateSchedule', scheduleData);
-            } else {
-                weekView.handler.creation.time.fire('beforeCreateSchedule', scheduleData);
-            }
+            weekView.handler.creation.allday.fire('beforeCreateSchedule', scheduleData);
         };
         createView.on('beforeCreateSchedule', onSaveNewSchedule);
     }
@@ -272,18 +265,10 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
             detailView.render(eventData);
         };
         onDeleteSchedule = function(eventData) {
-            if (eventData.isAllDay) {
-                weekView.handler.creation.allday.fire('beforeDeleteSchedule', eventData);
-            } else {
-                weekView.handler.creation.time.fire('beforeDeleteSchedule', eventData);
-            }
+            weekView.handler.creation.allday.fire('beforeDeleteSchedule', eventData);
         };
         onEditSchedule = function(eventData) {
-            if (eventData.isAllDay) {
-                weekView.handler.move.allday.fire('beforeUpdateSchedule', eventData);
-            } else {
-                weekView.handler.move.time.fire('beforeUpdateSchedule', eventData);
-            }
+            weekView.handler.move.allday.fire('beforeUpdateSchedule', eventData);
         };
 
         util.forEach(weekView.handler.click, function(panel) {
@@ -337,12 +322,8 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
         view: weekView,
         refresh: function() {
             var weekViewHeight = weekView.getViewBound().height,
-                daynameViewHeight = domutil.getBCRect(
-                    dayNameView.container
-                ).height;
-
-            vLayout.container.style.height =
-                weekViewHeight - daynameViewHeight + 'px';
+                daynameViewHeight = domutil.getBCRect(dayNameView.container).height;
+            vLayout.container.style.height = weekViewHeight - daynameViewHeight + 'px';
             vLayout.refresh();
         },
         scrollToNow: function() {
@@ -354,11 +335,7 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
         },
         openCreationPopup: function(schedule) {
             if (createView) {
-                if (schedule.isAllDay) {
-                    weekView.handler.creation.allday.invokeCreationClick(Schedule.create(schedule));
-                } else {
-                    weekView.handler.creation.time.invokeCreationClick(Schedule.create(schedule));
-                }
+                weekView.handler.creation.allday.invokeCreationClick(Schedule.create(schedule));
             }
         },
         showCreationPopup: function(eventData) {

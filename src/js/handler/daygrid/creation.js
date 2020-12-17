@@ -150,7 +150,9 @@ DayGridCreation.prototype._createSchedule = function(scheduleData) {
 
     start = new TZDate(dateRange[startXIndex]);
     end = datetime.end(dateRange[xIndex]);
-
+    /* eslint-disable no-debugger, no-console */
+    console.log('Day Grid Creation click ');
+    console.log(scheduleData);
     /**
      * @event {DayGridCreation#beforeCreateSchedule}
      * @type {object}

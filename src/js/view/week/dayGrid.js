@@ -32,11 +32,7 @@ var mmax = Math.max,
  * @param {Theme} theme - theme instance
  */
 function DayGrid(name, options, container, theme) {
-    container = domutil.appendHTMLElement(
-        'div',
-        container,
-        config.classname('daygrid-layout')
-    );
+    container = domutil.appendHTMLElement('div', container, config.classname('daygrid-layout'));
     View.call(this, container);
 
     name = name || 'daygrid';
@@ -156,9 +152,7 @@ DayGrid.prototype.render = function(viewModel) {
 
     this.children.clear();
 
-    dayGridSchedule = new DayGridSchedule(
-        opt,
-        domutil.find(config.classname('.container'), container)
+    dayGridSchedule = new DayGridSchedule(opt, domutil.find(config.classname('.container'), container)
     );
     this.addChild(dayGridSchedule);
 

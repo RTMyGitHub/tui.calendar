@@ -106,30 +106,23 @@ MonthResize.prototype._onDragStart = function(dragStartEvent) {
     var target = dragStartEvent.target,
         modelID, schedule,
         scheduleData;
-
     if (!domutil.hasClass(target, config.classname('weekday-resize-handle'))) {
         return;
     }
-
     target = domutil.closest(target, config.classname('.weekday-schedule-block'));
-
     if (!target) {
         return;
     }
-
     modelID = domutil.getData(target, 'id');
     schedule = this.baseController.schedules.items[modelID];
-
     this.dragHandler.on({
         drag: this._onDrag,
         dragEnd: this._onDragEnd
     }, this);
-
     this.getScheduleData = getMousePosData(this.monthView);
     scheduleData = this.getScheduleData(dragStartEvent.originEvent);
     scheduleData.target = target;
     scheduleData.model = schedule;
-
     this._cache = {
         schedule: schedule,
         target: target,
@@ -213,7 +206,6 @@ MonthResize.prototype._onDragEnd = function(dragEndEvent) {
      * @property {Date} date - drag date
      */
     this.fire('monthResizeDragend', scheduleData);
-
     this.getScheduleData = this._cache = null;
 };
 

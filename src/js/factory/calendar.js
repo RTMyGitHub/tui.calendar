@@ -666,12 +666,14 @@ Calendar.prototype._initialize = function(options) {
         scheduleView: true,
         template: util.extend({
             allday: null,
+            halfday: null,
             time: null
         }, util.pick(options, 'template') || {}),
         week: util.extend({}, util.pick(options, 'week') || {}),
         month: util.extend({}, util.pick(options, 'month') || {}),
         calendars: [],
         useCreationPopup: false,
+        isUserAAAdmin: false,
         useDetailPopup: false,
         timezones: options.timezones || [],
         disableDblClick: false,
@@ -688,8 +690,7 @@ Calendar.prototype._initialize = function(options) {
         startDayOfWeek: 0,
         workweek: false,
         scheduleFilter: function(schedule) {
-            return Boolean(schedule.isVisible) &&
-              (schedule.category === 'allday' || schedule.category === 'time');
+            return Boolean(schedule.isVisible);
         }
     }, util.pick(options, 'month') || {});
 
@@ -808,7 +809,9 @@ Calendar.prototype.updateSchedule = function(scheduleId, calendarId, changes, si
             return model.id === scheduleId && model.calendarId === calendarId;
         });
     var hasChangedCalendar = false;
-
+    /* eslint-disable no-debugger, no-console */
+    console.log('Schedule Update in Calendar.js');
+    console.log(scheduleId, calendarId, changes, silent, ownSchedules, schedule);
     if (!changes || !schedule) {
         return;
     }
@@ -1232,18 +1235,21 @@ Calendar.prototype.setCalendarColor = function(calendarId, option, silent) {
     var calColor = this._calendarColor,
         ownSchedules = this._controller.schedules,
         ownColor = calColor[calendarId];
+    /* eslint-disable no-debugger, no-console */
+    console.log('Setting Calendar Color');
+    console.log(option, ownColor);
 
     if (!util.isObject(option)) {
         config.throwError('Calendar#changeCalendarColor(): color 는 {color: \'\', bgColor: \'\'} 형태여야 합니다.');
     }
 
     ownColor = calColor[calendarId] = util.extend({
-        color: '#000',
+        color: '#000000',
         bgColor: '#a1b56c',
         borderColor: '#a1b56c',
         dragBgColor: '#a1b56c'
     }, option);
-
+    console.log(option, ownColor);
     ownSchedules.each(function(model) {
         if (model.calendarId !== calendarId) {
             return;

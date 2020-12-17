@@ -147,7 +147,6 @@ function TZDate(date) {
     if (util.isUndefined(date)) {
         date = Date.now();
     }
-
     if (arguments.length > 1) {
         nativeDate = createDateWithMultipleArgs(arguments);
     } else if (useLocalTimeConverter(date)) {
@@ -155,7 +154,6 @@ function TZDate(date) {
     } else {
         nativeDate = createDateWithUTCTime(date);
     }
-
     this._date = nativeDate;
 }
 

@@ -247,7 +247,7 @@ TimeCreation.prototype._createSchedule = function(eventData) {
      * @property {string} triggerEventName - event name
      */
     this.fire('beforeCreateSchedule', {
-        isAllDay: false,
+        isAllDay: true,
         start: new TZDate(start),
         end: new TZDate(end),
         guide: this.guide,

@@ -332,6 +332,9 @@ var helpers = {
 
     'schedule-tmpl': function(model) {
         var tmpl = Handlebars.helpers[model.category + '-tmpl'];
+        /* eslint-disable no-debugger, no-console */
+        console.log('Computing title on dat grid view in App');
+        console.log(model);
         if (tmpl) {
             return tmpl(model);
         }
@@ -424,15 +427,11 @@ var helpers = {
     'popupUpdate-tmpl': function() {
         return 'Update';
     },
-    'popupDetailDate-tmpl': function(isAllDay, start, end) {
+    'popupDetailDate-tmpl': function(start, end) {
         var isSameDate = datetime.isSameDate(start, end);
         var endFormat = (isSameDate ? '' : 'YYYY.MM.DD ') + 'hh:mm tt';
 
-        if (isAllDay) {
-            return datetime.format(start, 'YYYY.MM.DD') + (isSameDate ? '' : ' - ' + datetime.format(end, 'YYYY.MM.DD'));
-        }
-
-        return (datetime.format(start, 'YYYY.MM.DD hh:mm tt') + ' - ' + datetime.format(end, endFormat));
+        return datetime.format(start, 'YYYY.MM.DD') + (isSameDate ? '' : ' - ' + datetime.format(end, 'YYYY.MM.DD'));
     },
     'popupDetailLocation-tmpl': function(schedule) {
         return schedule.location;

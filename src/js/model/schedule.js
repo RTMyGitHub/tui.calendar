@@ -67,10 +67,16 @@ function Schedule() {
     this.isAllDay = false;
 
     /**
-     * is schedule is all day schedule?
+     * is schedule is half day schedule?
      * @type {boolean}
      */
     this.isHalfDay = false;
+
+    /**
+     * daysCount is 1 for isAllDay and 1/2(0.5) for isHalfDay
+     * @type {string}
+     */
+    this.daysCount = '';
 
     /**
      * schedule start
@@ -254,15 +260,12 @@ Schedule.prototype.init = function(options) {
     if (options.category === SCHEDULE_CATEGORY.ALLDAY) {
         options.isAllDay = true;
     }
-    if (options.category === SCHEDULE_CATEGORY.HALFDAY) {
-        options.isHalfDay = true;
-    }
-
     this.id = options.id || '';
     this.title = options.title || '';
     this.body = options.body || '';
     this.isAllDay = util.isExisty(options.isAllDay) ? options.isAllDay : false;
     this.isHalfDay = util.isExisty(options.isHalfDay) ? options.isHalfDay : false;
+    this.daysCount = options.daysCount || '';
     this.isVisible = util.isExisty(options.isVisible) ? options.isVisible : true;
     this.color = options.color || this.color;
     this.bgColor = options.bgColor || this.bgColor;
@@ -284,25 +287,22 @@ Schedule.prototype.init = function(options) {
     this.goingDuration = options.goingDuration || 0;
     this.comingDuration = options.comingDuration || 0;
     this.state = options.state || '';
-
-    if (this.isAllDay) {
-        this.setAllDayPeriod(options.start, options.end);
-    } else {
-        this.setTimePeriod(options.start, options.end);
-    }
-
+    this.setAllDayPeriod(options.start, options.end);
     this.raw = options.raw || null;
 };
 
 Schedule.prototype.setAllDayPeriod = function(start, end) {
+    /* eslint-disable no-debugger, no-console */
+    console.log('Schedule Start and End');
+    console.log(start, end);
     this.start = datetime.start(new TZDate(start || Date.now()));
     this.end = datetime.end(new TZDate(end || this.start));
+    console.log(this.start, this.end);
 };
 
 Schedule.prototype.setTimePeriod = function(start, end) {
     this.start = new TZDate(start || Date.now());
     this.end = new TZDate(end || this.start);
-
     if (!end) {
         this.end.setMinutes(this.end.getMinutes() + 30);
     }

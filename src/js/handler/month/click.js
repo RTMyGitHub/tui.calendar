@@ -78,6 +78,9 @@ MonthClick.prototype._onClick = function(clickEvent) {
              * @property {Schedule} schedule - schedule instance
              * @property {MouseEvent} event - MouseEvent object
              */
+            /* eslint-disable no-debugger, no-console */
+            console.log('Clicked on Schedule. See Event / Schedule Details below');
+            console.log(schedule);
             self.fire('clickSchedule', {
                 schedule: schedule,
                 event: clickEvent.originEvent

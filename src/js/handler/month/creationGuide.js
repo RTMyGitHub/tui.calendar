@@ -52,7 +52,6 @@ MonthCreationGuide.prototype._createGuideElement = function(dragStartEvent) {
         height: '100%',
         top: 0
     };
-
     this.guide = new MonthGuide(options, this.monthCreation.monthView);
     this.guide.start(dragStartEvent);
 };

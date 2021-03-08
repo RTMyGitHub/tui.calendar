@@ -1,6 +1,6 @@
 /*!
  * TOAST UI Calendar
- * @version 1.12.13 | Wed Dec 09 2020
+ * @version 1.12.13 | Tue Feb 23 2021
  * @author NHN FE Development Lab <dl_javascript@nhn.com>
  * @license MIT
  */
@@ -5393,6 +5393,132 @@ module.exports = FloatingLayer;
 
 /***/ }),
 
+/***/ "./src/js/common/intlUtil.js":
+/*!***********************************!*\
+  !*** ./src/js/common/intlUtil.js ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(global) {
+
+var util = __webpack_require__(/*! tui-code-snippet */ "tui-code-snippet");
+var intlFormatter = {};
+var intlUtil;
+
+var typeToPos = {
+    year: 0,
+    month: 1,
+    day: 2,
+    hour: 3,
+    minute: 4,
+    second: 5
+};
+
+/**
+ * Extract date tokens (y, M, d, h, m, s) using the formatToParts() method.
+ * @param {Intl.DateTimeFormat} dtf - Intl.DateTimeFormat instance
+ * @param {Date} date - date object
+ * @returns {Array.<number>} An array of objects only containing the formatted date
+ */
+function parseOffset(dtf, date) {
+    var formatted = dtf.formatToParts(date);
+    var filled = [];
+    var formattedLength = formatted.length;
+    var i, pos;
+
+    for (i = 0; i < formattedLength; i += 1) {
+        pos = typeToPos[formatted[i].type];
+
+        if (!util.isUndefined(pos)) {
+            filled[pos] = parseInt(formatted[i].value, 10);
+        }
+    }
+
+    return filled;
+}
+
+/**
+ * The time zone offset is calculated from the difference between the current time and the time in a specific time zone.
+ * @param {Array.<number>} parts - An array of objects only containing the formatted date (e.g. [2020, 12, 14, 10, 15, 19])
+ * @param {Date} date - date object
+ * @returns {number} offset
+ */
+function calculateOffset(parts, date) {
+    var y = parts[0];
+    var M = parts[1];
+    var d = parts[2];
+    var h = parts[3];
+    var m = parts[4];
+    var s = parts[5];
+
+    var utc = new Date(Date.UTC(y, M - 1, d, h, m, s));
+    var offset = (utc - date) / 60 / 1000;
+
+    return Math.round(offset);
+}
+
+/**
+ * Check if browser supports Intl.DateTimeFormat.prototype.formatToParts API
+ * @returns {boolean} supported
+ */
+function supportIntl() {
+    /**
+     * IE9 and IE10 do not support Intl.DateTimeFormat
+     * IE11 does not support IANA timezone names
+     * http://kangax.github.io/compat-table/esintl/#test-DateTimeFormat_accepts_IANA_timezone_names
+     */
+    return global.Intl && global.Intl.DateTimeFormat &&
+        util.isFunction(Intl.DateTimeFormat.prototype.formatToParts);
+}
+
+/**
+ * Return DateTimeFormat instance by timezone
+ * @param {string} timezoneName - timezone
+ * @returns {DateTimeFormat} Intl.DateTimeFormat instance
+ */
+function getIntlFormatter(timezoneName) {
+    if (!intlFormatter[timezoneName]) {
+        intlFormatter[timezoneName] = new Intl.DateTimeFormat('en-US', {
+            hourCycle: 'h23',
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            timeZone: timezoneName
+        });
+    }
+
+    return intlFormatter[timezoneName];
+}
+
+/**
+ * Get offset of the time by timezone
+ * @param {string} timezoneName - recognize the time zone names of the IANA time zone database, such as 'Asia/Seoul', 'America/New_York'
+ * @param {number} timestamp - timestamp
+ * @returns {number} offset
+ */
+function offsetCalculator(timezoneName, timestamp) {
+    var formatter = getIntlFormatter(timezoneName);
+    var date = new Date(timestamp);
+
+    return -calculateOffset(parseOffset(formatter, date), date);
+}
+
+intlUtil = {
+    supportIntl: supportIntl,
+    offsetCalculator: offsetCalculator
+};
+
+module.exports = intlUtil;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
+
+/***/ }),
+
 /***/ "./src/js/common/model.js":
 /*!********************************!*\
   !*** ./src/js/common/model.js ***!
@@ -5992,12 +6118,15 @@ module.exports = {
 
 
 var util = __webpack_require__(/*! tui-code-snippet */ "tui-code-snippet");
+var intlUtil = __webpack_require__(/*! ./intlUtil */ "./src/js/common/intlUtil.js");
 
 var MIN_TO_MS = 60 * 1000;
 var nativeOffsetMs = getTimezoneOffset();
 var customOffsetMs = nativeOffsetMs;
 var timezoneOffsetCallback = null;
 var setByTimezoneOption = false;
+var offsetCalculator = null;
+var primaryOffset, primaryTimezoneName;
 
 var getterMethods = [
     'getDate',
@@ -6020,6 +6149,9 @@ var setterMethods = [
     'setSeconds'
 ];
 
+var STANDARD_TO_DST = 1;
+var DST_TO_STANDARD = -1;
+
 /**
  * Get the timezone offset by timestampe
  * @param {number} timestamp - timestamp
@@ -6027,7 +6159,7 @@ var setterMethods = [
  * @private
  */
 function getTimezoneOffset(timestamp) {
-    timestamp = timestamp || Date.now();
+    timestamp = !util.isUndefined(timestamp) ? timestamp : Date.now();
 
     return new Date(timestamp).getTimezoneOffset() * MIN_TO_MS;
 }
@@ -6052,10 +6184,14 @@ function getCustomTimezoneOffset(timestamp) {
  * @returns {number} local time
  */
 function getLocalTime(time) {
-    var timezoneOffset = getTimezoneOffset(time);
-    var customTimezoneOffset = getCustomTimezoneOffset(time);
-    var timezoneOffsetDiff = customTimezoneOffset ? 0 : nativeOffsetMs - timezoneOffset;
-    var localTime = time - customTimezoneOffset + timezoneOffset + timezoneOffsetDiff;
+    var customTimezoneOffset, localTime;
+
+    if (!setByTimezoneOption) {
+        return time;
+    }
+
+    customTimezoneOffset = getCustomTimezoneOffset(time);
+    localTime = time - customTimezoneOffset + nativeOffsetMs;
 
     return localTime;
 }
@@ -6082,7 +6218,7 @@ function createDateWithUTCTime(arg) {
 
     if (arg instanceof TZDate) {
         time = arg.getUTCTime();
-    } else if ((typeof arg) === 'number') {
+    } else if (typeof arg === 'number') {
         time = arg;
     } else if (arg === null) {
         time = 0;
@@ -6103,7 +6239,7 @@ function createDateAsLocalTime(arg) {
 
     if (arg instanceof Date) {
         time = arg.getTime();
-    } else if ((typeof arg) === 'string') {
+    } else if (typeof arg === 'string') {
         time = Date.parse(arg);
     } else {
         throw new Error('Invalid Type');
@@ -6120,7 +6256,7 @@ function createDateAsLocalTime(arg) {
  * @returns {boolean}
  */
 function useLocalTimeConverter(arg) {
-    return arg instanceof Date || (typeof arg) === 'string';
+    return arg instanceof Date || typeof arg === 'string';
 }
 
 /**
@@ -6134,6 +6270,7 @@ function TZDate(date) {
     if (util.isUndefined(date)) {
         date = Date.now();
     }
+
     if (arguments.length > 1) {
         nativeDate = createDateWithMultipleArgs(arguments);
     } else if (useLocalTimeConverter(date)) {
@@ -6141,6 +6278,7 @@ function TZDate(date) {
     } else {
         nativeDate = createDateWithUTCTime(date);
     }
+
     this._date = nativeDate;
 }
 
@@ -6233,16 +6371,142 @@ setterMethods.forEach(function(methodName) {
     };
 });
 
+/**
+ * Set offset
+ * @param {number} offset - timezone offset based on minutes
+ */
+function setOffset(offset) {
+    customOffsetMs = offset * MIN_TO_MS;
+}
+
+/**
+ * Set primary offset
+ * @param {number} offset - offset
+ */
+function setPrimaryOffset(offset) {
+    primaryOffset = offset;
+    setOffset(offset);
+}
+
+/**
+ * Return primary offset
+ * @returns {number} offset
+ */
+function getPrimaryOffset() {
+    return util.isNumber(primaryOffset) ? primaryOffset : new Date().getTimezoneOffset();
+}
+
+/**
+ * Set primary timezone name
+ * @param {string} timezoneName - timezone name (time zone names of the IANA time zone database, such as 'Asia/Seoul', 'America/New_York')
+ */
+function setPrimaryTimezoneCode(timezoneName) {
+    primaryTimezoneName = timezoneName;
+}
+
+/**
+ * Get offset by timezoneName
+ * @param {string} timezoneName - timezone name (time zone names of the IANA time zone database, such as 'Asia/Seoul', 'America/New_York')
+ * @param {number} timestamp - timestamp
+ * @returns {number} timezone offset
+ */
+function getOffsetByTimezoneName(timezoneName, timestamp) {
+    var offset = getPrimaryOffset();
+    var calculator;
+
+    if (!timezoneName) {
+        return offset;
+    }
+
+    calculator = getOffsetCalculator(timezoneName);
+
+    return calculator ? calculator(timezoneName, timestamp) : offset;
+}
+
+/**
+ * Set a calculator function to get timezone offset by timestamp
+ * @param {function} calculator - offset calculator
+ */
+function setOffsetCalculator(calculator) {
+    offsetCalculator = calculator;
+}
+
+/**
+ * Return a function to calculate timezone offset by timestamp
+ * @param {string} timezoneName - timezone name
+ * @returns {function | null} offset calculator
+ */
+function getOffsetCalculator(timezoneName) {
+    if (util.isFunction(offsetCalculator)) {
+        return offsetCalculator;
+    }
+
+    if (intlUtil.supportIntl(timezoneName)) {
+        return intlUtil.offsetCalculator;
+    }
+
+    return null;
+}
+
+/**
+ * Set timezone and offset by timezone option
+ * @param {Timezone} timezoneObj - {@link Timezone}
+ */
+function setPrimaryTimezoneByOption(timezoneObj) {
+    var timezoneName, offset;
+
+    if (!(timezoneObj && timezoneObj.timezoneName)) {
+        return;
+    }
+
+    timezoneName = timezoneObj.timezoneName;
+    setByTimezoneOption = true;
+    setPrimaryTimezoneCode(timezoneName);
+
+    offset = getOffsetByTimezoneName(timezoneName, Date.now());
+
+    if (offset === nativeOffsetMs / MIN_TO_MS) {
+        setByTimezoneOption = false;
+    }
+
+    setPrimaryOffset(offset);
+}
+
+/**
+ * Get primary timezone name
+ * @returns {string} primary timezone name (time zone names of the IANA time zone database, such as 'Asia/Seoul', 'America/New_York')
+ */
+function getPrimaryTimezoneName() {
+    return primaryTimezoneName;
+}
+
+/**
+ * Compare the start and end times to see if the time zone is changing.
+ * @param {number} startTime - start timestamp
+ * @param {number} endTime - end timestamp
+ * @returns {object} whether to change the offset and offset difference value
+ */
+function isDifferentOffsetStartAndEndTime(startTime, endTime) {
+    var offset1 = getOffsetByTimezoneName(primaryTimezoneName, startTime);
+    var offset2 = getOffsetByTimezoneName(primaryTimezoneName, endTime);
+    var result = 0;
+
+    if (offset1 > offset2) {
+        result = STANDARD_TO_DST;
+    } else if (offset1 < offset2) {
+        result = DST_TO_STANDARD;
+    }
+
+    return {
+        isOffsetChanged: result,
+        offsetDiff: offset1 - offset2
+    };
+}
+
 module.exports = {
     Date: TZDate,
 
-    /**
-     * Set offset
-     * @param {number} offset - timezone offset based on minutes
-     */
-    setOffset: function(offset) {
-        customOffsetMs = offset * MIN_TO_MS;
-    },
+    setOffset: setOffset,
 
     /**
      * Set offset
@@ -6250,6 +6514,7 @@ module.exports = {
      */
     setOffsetByTimezoneOption: function(offset) {
         this.setOffset(-offset);
+        primaryOffset = -offset;
         setByTimezoneOption = true;
     },
 
@@ -6279,7 +6544,55 @@ module.exports = {
      */
     restoreOffset: function() {
         customOffsetMs = getTimezoneOffset();
-    }
+    },
+
+    getNativeOffsetMs: function() {
+        return nativeOffsetMs;
+    },
+
+    /**
+     * Check to use custom timezone option
+     * @returns {boolean} use custom timezone option
+     */
+    hasPrimaryTimezoneCustomSetting: function() {
+        return setByTimezoneOption;
+    },
+
+    resetCustomSetting: function() {
+        setByTimezoneOption = false;
+    },
+
+    setOffsetCalculator: setOffsetCalculator,
+
+    setPrimaryTimezoneByOption: setPrimaryTimezoneByOption,
+
+    getPrimaryOffset: getPrimaryOffset,
+
+    getOffsetByTimezoneName: getOffsetByTimezoneName,
+
+    getPrimaryTimezoneName: getPrimaryTimezoneName,
+
+    isNativeOsUsingDSTTimezone: function() {
+        var year = new Date().getFullYear();
+        var jan = new Date(year, 0, 1).getTimezoneOffset();
+        var jul = new Date(year, 6, 1).getTimezoneOffset();
+
+        return jan !== jul;
+    },
+
+    isPrimaryUsingDSTTimezone: function() {
+        var year = new Date().getFullYear();
+        var jan = new Date(year, 0, 1);
+        var jul = new Date(year, 6, 1);
+
+        return (
+            getOffsetByTimezoneName(primaryTimezoneName, jan) !==
+            getOffsetByTimezoneName(primaryTimezoneName, jul)
+        );
+    },
+
+    isDifferentOffsetStartAndEndTime: isDifferentOffsetStartAndEndTime,
+    setPrimaryTimezoneCode: setPrimaryTimezoneCode
 };
 
 
@@ -9006,6 +9319,7 @@ Calendar.prototype._initialize = function(options) {
         calendars: [],
         useCreationPopup: false,
         isUserAAAdmin: false,
+        dateFormat: 'yyyy-MM-dd',
         useDetailPopup: false,
         timezones: options.timezones || [],
         disableDblClick: false,
@@ -9263,7 +9577,6 @@ Calendar.prototype._getWeekDayRange = function(date, startDayOfWeek, workweek) {
  */
 Calendar.prototype.toggleSchedules = function(calendarId, toHide, render) {
     var ownSchedules = this._controller.schedules;
-
     render = util.isExisty(render) ? render : true;
     calendarId = util.isArray(calendarId) ? calendarId : [calendarId];
 
@@ -9271,6 +9584,7 @@ Calendar.prototype.toggleSchedules = function(calendarId, toHide, render) {
         if (~util.inArray(schedule.calendarId, calendarId)) {
             schedule.set('isVisible', !toHide);
         }
+        console.log(schedule.calendarId, schedule.isVisible);
     });
 
     if (render) {
@@ -10415,7 +10729,7 @@ function createMonthView(baseController, layoutContainer, dragHandler, options) 
     // binding popup for schedules creation
     if (options.useCreationPopup) {
         // eslint-disable-next-line max-len
-        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.usageStatistics);
+        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.dateFormat, options.usageStatistics);
         onSaveNewSchedule = function(scheduleData) {
             creationHandler.fire('beforeCreateSchedule', util.extend(scheduleData, {
                 useCreationPopup: true
@@ -10806,7 +11120,7 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
     // binding create schedules event
     if (options.useCreationPopup) {
         // eslint-disable-next-line max-len
-        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.usageStatistics);
+        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.dateFormat, options.usageStatistics);
 
         onSaveNewSchedule = function(scheduleData) {
             util.extend(scheduleData, {
@@ -13368,6 +13682,8 @@ function MonthCreation(dragHandler, monthView, baseController, options) {
  * Destructor
  */
 MonthCreation.prototype.destroy = function() {
+    /* eslint-disable no-debugger, no-console */
+    console.log('Destroying Popup');
     this.dragHandler.off(this);
     this.guide.destroy();
 
@@ -13705,7 +14021,6 @@ MonthCreationGuide.prototype._createGuideElement = function(dragStartEvent) {
         height: '100%',
         top: 0
     };
-
     this.guide = new MonthGuide(options, this.monthCreation.monthView);
     this.guide.start(dragStartEvent);
 };
@@ -17556,10 +17871,12 @@ module.exports = TimeResizeGuide;
 
 
 var util = __webpack_require__(/*! tui-code-snippet */ "tui-code-snippet");
-var TZDate = __webpack_require__(/*! ../common/timezone */ "./src/js/common/timezone.js").Date;
+var tz = __webpack_require__(/*! ../common/timezone */ "./src/js/common/timezone.js");
 var datetime = __webpack_require__(/*! ../common/datetime */ "./src/js/common/datetime.js");
 var dirty = __webpack_require__(/*! ../common/dirty */ "./src/js/common/dirty.js");
 var model = __webpack_require__(/*! ../common/model */ "./src/js/common/model.js");
+var TZDate = tz.Date;
+var MIN_TO_MS = 60 * 1000;
 
 var SCHEDULE_MIN_DURATION = datetime.MILLISECONDS_SCHEDULE_MIN_DURATION;
 
@@ -17584,6 +17901,37 @@ var SCHEDULE_CATEGORY = {
     /** normal schedule */
     TIME: 'time'
 };
+
+/**
+ * Get duration by primary timezone
+ * @param {Date} start render start date
+ * @param {Date} end render end date
+ * @returns {number} duration
+ */
+function getDurationByPrimaryTimezone(start, end) {
+    var checkOffset = tz.isDifferentOffsetStartAndEndTime(start.getTime(), end.getTime());
+    var isOffsetChanged = checkOffset.isOffsetChanged;
+    var duration = end - start;
+
+    if (isOffsetChanged !== 0) {
+        duration += checkOffset.offsetDiff * MIN_TO_MS;
+    }
+
+    return duration;
+}
+
+/**
+ * Get duration by native timezone
+ * @param {TZDate} start render start date
+ * @param {TZDate} end render end date
+ * @returns {number} duration
+ */
+function getDurationByNativeTimezone(start, end) {
+    var startOffset = start.toDate().getTimezoneOffset();
+    var endOffset = end.toDate().getTimezoneOffset();
+
+    return (end - start) + ((endOffset - startOffset) * MIN_TO_MS);
+}
 
 /**
  * The model of calendar schedules.
@@ -17842,12 +18190,22 @@ Schedule.prototype.init = function(options) {
 };
 
 Schedule.prototype.setAllDayPeriod = function(start, end) {
-    /* eslint-disable no-debugger, no-console */
-    console.log('Schedule Start and End');
-    console.log(start, end);
-    this.start = datetime.start(new TZDate(start || Date.now()));
-    this.end = datetime.end(new TZDate(end || this.start));
-    console.log(this.start, this.end);
+    // If it is an all-day schedule, only the date information of the string is used.
+    if (util.isString(start) && start.length === 10) {
+        start = datetime.parse(start);
+    } else {
+        start = new TZDate(start || Date.now());
+    }
+
+    if (util.isString(end) && end.length === 10) {
+        end = datetime.parse(end);
+        end.setHours(23, 59, 59);
+    } else {
+        end = new TZDate(end || start);
+    }
+
+    this.start = datetime.start(start);
+    this.end = datetime.renderEnd(start, end);
 };
 
 Schedule.prototype.setTimePeriod = function(start, end) {
@@ -17940,9 +18298,14 @@ Schedule.prototype.duration = function() {
     var start = this.getStarts(),
         end = this.getEnds(),
         duration;
+    var hasPrimaryTimezoneCustomSetting = tz.hasPrimaryTimezoneCustomSetting();
 
     if (this.isAllDay) {
         duration = datetime.end(end) - datetime.start(start);
+    } else if (hasPrimaryTimezoneCustomSetting && tz.isPrimaryUsingDSTTimezone()) {
+        duration = getDurationByPrimaryTimezone(start, end);
+    } else if (hasPrimaryTimezoneCustomSetting && tz.isNativeOsUsingDSTTimezone()) {
+        duration = getDurationByNativeTimezone(start, end);
     } else {
         duration = end - start;
     }
@@ -17979,9 +18342,11 @@ Schedule.prototype.collidesWith = function(schedule) {
     start -= goingDuration;
     end += comingDuration;
 
-    if ((start > ownStarts && start < ownEnds) ||
+    if (
+        (start > ownStarts && start < ownEnds) ||
         (end > ownStarts && end < ownEnds) ||
-        (start <= ownStarts && end >= ownEnds)) {
+        (start <= ownStarts && end >= ownEnds)
+    ) {
         return true;
     }
 
@@ -19706,13 +20071,11 @@ var MAX_WEEK_OF_MONTH = 6;
  * @param {HTMLElement} container - container element
  * @param {Array.<Calendar>} calendars - calendar list used to create new schedule
  * @param {boolean} isUserAAAdmin - If the User Logged in is an Agile Apps Admin
+ * @param {string} dateFormat - User's preferred date format in Agile Apps
  * @param {boolean} usageStatistics - GA tracking options in Calendar
  */
-function ScheduleCreationPopup(container, calendars, isUserAAAdmin, usageStatistics) {
+function ScheduleCreationPopup(container, calendars, isUserAAAdmin, dateFormat, usageStatistics) {
     var popUpCalendars;
-    /* eslint-disable no-debugger, no-console */
-    console.log('Init a Popup Instance');
-    console.log(isUserAAAdmin);
     View.call(this, container);
     /**
      * @type {FloatingLayer}
@@ -19725,6 +20088,7 @@ function ScheduleCreationPopup(container, calendars, isUserAAAdmin, usageStatist
      */
     this._viewModel = null;
     this.isUserAAAdmin = isUserAAAdmin;
+    this.dateFormat = dateFormat;
     this._selectedCal = null;
     this._customSelection = null;
     this._schedule = null;
@@ -19732,6 +20096,7 @@ function ScheduleCreationPopup(container, calendars, isUserAAAdmin, usageStatist
         {'reason': 'Reason For Out Of Office'},
         {'reason': 'Bereavement'},
         {'reason': 'Floating Holiday'},
+        {'reason': 'Holiday'},
         {'reason': 'Jury Duty'},
         {'reason': 'Offsite'},
         {'reason': 'Other'},
@@ -20036,8 +20401,8 @@ ScheduleCreationPopup.prototype._onClickSaveSchedule = function(target) {
     }
 
     // title = domutil.get(cssPrefix + 'schedule-title');
-    startDate = new TZDate(this.rangePicker.getStartDate()).toLocalTime();
-    endDate = new TZDate(this.rangePicker.getEndDate()).toLocalTime();
+    startDate = new TZDate(this.rangePicker.getStartDate());
+    endDate = new TZDate(this.rangePicker.getEndDate());
     customSelection = domutil.get(cssPrefix + 'schedule-custom-selection');
     customTextInput = domutil.get(cssPrefix + 'schedule-custom-text-input');
     calendarName = this._selectedCal ? this._selectedCal.name : null;
@@ -20086,12 +20451,10 @@ ScheduleCreationPopup.prototype._onClickSaveSchedule = function(target) {
  */
 ScheduleCreationPopup.prototype.render = function(viewModel) {
     var calendars = this.calendars;
+    var dateFormat = this.dateFormat;
     var layer = this.layer;
     var self = this;
     var boxElement, guideElements;
-    /* eslint-disable no-debugger, no-console */
-    console.log('Initial View Model');
-    console.log(viewModel);
     viewModel.zIndex = this.layer.zIndex + 5;
     viewModel.calendars = calendars;
     viewModel.customSelectionList = this._customSelectionList;
@@ -20112,7 +20475,7 @@ ScheduleCreationPopup.prototype.render = function(viewModel) {
     console.log('View Model after changes');
     console.log(viewModel);
     layer.setContent(tmpl(viewModel));
-    this._createDatepicker(viewModel.start, viewModel.end, true);
+    this._createDatepicker(viewModel.start, viewModel.end, dateFormat, true);
     layer.show();
 
     if (boxElement) {
@@ -20331,7 +20694,7 @@ ScheduleCreationPopup.prototype._getXAndArrowLeft = function(
 };
 
 /**
- * Calculate rendering position usering guide elements
+ * Calculate rendering position using guide elements
  * @param {{width: {number}, height: {number}}} layerSize - popup layer's width and height
  * @param {{top: {number}, left: {number}, right: {number}, bottom: {number}}} containerBound - width and height of the upper layer, that acts as a border of popup
  * @param {{top: {number}, left: {number}, right: {number}, bottom: {number}}} guideBound - guide element bound data
@@ -20393,11 +20756,17 @@ ScheduleCreationPopup.prototype._setArrowDirection = function(arrow) {
  * Create date range picker using start date and end date
  * @param {TZDate} start - start date
  * @param {TZDate} end - end date
+ * @param {string} dateFormat - date format
  * @param {boolean} isAllDay - isAllDay
  */
-ScheduleCreationPopup.prototype._createDatepicker = function(start, end, isAllDay) {
+ScheduleCreationPopup.prototype._createDatepicker = function(start, end, dateFormat, isAllDay) {
     var cssPrefix = config.cssPrefix;
-
+    var dFormat;
+    if (dateFormat) {
+        dFormat = dateFormat;
+    } else {
+        dFormat = isAllDay ? 'yyyy-MM-dd' : 'yyyy-MM-dd HH:mm';
+    }
     this.rangePicker = DatePicker.createRangePicker({
         startpicker: {
             date: new TZDate(start).toDate(),
@@ -20409,7 +20778,7 @@ ScheduleCreationPopup.prototype._createDatepicker = function(start, end, isAllDa
             input: '#' + cssPrefix + 'schedule-end-date',
             container: '#' + cssPrefix + 'endpicker-container'
         },
-        format: isAllDay ? 'yyyy-MM-dd' : 'yyyy-MM-dd HH:mm',
+        format: dFormat,
         timepicker: isAllDay ? null : {
             showMeridiem: false,
             usageStatistics: this._usageStatistics
@@ -20531,7 +20900,7 @@ ScheduleCreationPopup.prototype._onClickUpdateSchedule = function(form) {
         ['calendarId', 'customSelection', 'customTextInput', 'start', 'end', 'isAllDay', 'isHalfDay'],
         {
             calendarId: form.calendarId,
-            customSelection: form.customSelection.value,
+            customSelection: form.customSelection.innerText,
             customTextInput: form.customTextInput.value,
             /*
             title: form.title.value,
@@ -20544,7 +20913,6 @@ ScheduleCreationPopup.prototype._onClickUpdateSchedule = function(form) {
             isHalfDay: form.isHalfDay
         }
     );
-
     /**
      * @event ScheduleCreationPopup#beforeUpdateSchedule
      * @type {object}
@@ -22587,7 +22955,7 @@ module.exports = (Handlebars['default'] || Handlebars).template({"1":function(co
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":42,"column":27},"end":{"line":42,"column":41}}}) : helper)))
     + "schedule-custom-text-input\" class=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":42,"column":76},"end":{"line":42,"column":90}}}) : helper)))
-    + "content\" size=\"70\"\n                       value=\""
+    + "content\"\n                       value=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"customTextInput") || (depth0 != null ? lookupProperty(depth0,"customTextInput") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"customTextInput","hash":{},"data":data,"loc":{"start":{"line":43,"column":30},"end":{"line":43,"column":49}}}) : helper)))
     + "\" placeholder=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"popupCustomTextInputPlaceholder-tmpl") || (depth0 != null ? lookupProperty(depth0,"popupCustomTextInputPlaceholder-tmpl") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"popupCustomTextInputPlaceholder-tmpl","hash":{},"data":data,"loc":{"start":{"line":43,"column":64},"end":{"line":43,"column":104}}}) : helper)))
@@ -22607,9 +22975,9 @@ module.exports = (Handlebars['default'] || Handlebars).template({"1":function(co
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":49,"column":69},"end":{"line":49,"column":83}}}) : helper)))
     + "content\"\n                       placeholder=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"startDatePlaceholder-tmpl") || (depth0 != null ? lookupProperty(depth0,"startDatePlaceholder-tmpl") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"startDatePlaceholder-tmpl","hash":{},"data":data,"loc":{"start":{"line":50,"column":36},"end":{"line":50,"column":65}}}) : helper)))
-    + "\">\n                <div id=\""
+    + "\" readonly>\n                <div id=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":51,"column":25},"end":{"line":51,"column":39}}}) : helper)))
-    + "startpicker-container\" style=\"margin-left: -1px; position: relative\"></div>\n            </div>\n            <span class=\""
+    + "startpicker-container\" style=\"margin-left: -12px; position: relative\"></div>\n            </div>\n            <span class=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":53,"column":25},"end":{"line":53,"column":39}}}) : helper)))
     + "section-date-dash\">-</span>\n            <div class=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":54,"column":24},"end":{"line":54,"column":38}}}) : helper)))
@@ -22625,9 +22993,9 @@ module.exports = (Handlebars['default'] || Handlebars).template({"1":function(co
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":56,"column":67},"end":{"line":56,"column":81}}}) : helper)))
     + "content\"\n                       placeholder=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"endDatePlaceholder-tmpl") || (depth0 != null ? lookupProperty(depth0,"endDatePlaceholder-tmpl") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"endDatePlaceholder-tmpl","hash":{},"data":data,"loc":{"start":{"line":57,"column":36},"end":{"line":57,"column":63}}}) : helper)))
-    + "\">\n                <div id=\""
+    + "\" readonly>\n                <div id=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":58,"column":25},"end":{"line":58,"column":39}}}) : helper)))
-    + "endpicker-container\" style=\"margin-left: -1px; position: relative\"></div>\n            </div>\n            <div class=\""
+    + "endpicker-container\" style=\"margin-left: -12px; position: relative\"></div>\n            </div>\n            <div class=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":60,"column":24},"end":{"line":60,"column":38}}}) : helper)))
     + "popup-section-item "
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":60,"column":57},"end":{"line":60,"column":71}}}) : helper)))
@@ -22637,7 +23005,7 @@ module.exports = (Handlebars['default'] || Handlebars).template({"1":function(co
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":61,"column":81},"end":{"line":61,"column":95}}}) : helper)))
     + "checkbox-square\""
     + ((stack1 = lookupProperty(helpers,"if").call(alias1,(depth0 != null ? lookupProperty(depth0,"isAllDay") : depth0),{"name":"if","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data,"loc":{"start":{"line":61,"column":111},"end":{"line":62,"column":49}}})) != null ? stack1 : "")
-    + ">\n                <span class=\""
+    + " >\n                <span class=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":63,"column":29},"end":{"line":63,"column":43}}}) : helper)))
     + "icon "
     + alias4(((helper = (helper = lookupProperty(helpers,"CSS_PREFIX") || (depth0 != null ? lookupProperty(depth0,"CSS_PREFIX") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CSS_PREFIX","hash":{},"data":data,"loc":{"start":{"line":63,"column":48},"end":{"line":63,"column":62}}}) : helper)))

@@ -674,6 +674,7 @@ Calendar.prototype._initialize = function(options) {
         calendars: [],
         useCreationPopup: false,
         isUserAAAdmin: false,
+        dateFormat: 'yyyy-MM-dd',
         useDetailPopup: false,
         timezones: options.timezones || [],
         disableDblClick: false,
@@ -931,7 +932,6 @@ Calendar.prototype._getWeekDayRange = function(date, startDayOfWeek, workweek) {
  */
 Calendar.prototype.toggleSchedules = function(calendarId, toHide, render) {
     var ownSchedules = this._controller.schedules;
-
     render = util.isExisty(render) ? render : true;
     calendarId = util.isArray(calendarId) ? calendarId : [calendarId];
 
@@ -939,6 +939,7 @@ Calendar.prototype.toggleSchedules = function(calendarId, toHide, render) {
         if (~util.inArray(schedule.calendarId, calendarId)) {
             schedule.set('isVisible', !toHide);
         }
+        console.log(schedule.calendarId, schedule.isVisible);
     });
 
     if (render) {

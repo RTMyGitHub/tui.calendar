@@ -3,9 +3,9 @@
   font-weight: 2.5
   box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.1)
   clear: both
+  width: 570px !important
 
 .{css-prefix}popup-container
-  min-width: 600px
   box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.1)
   background-color: #ffffff
   border: solid 1px #d5d5d5
@@ -23,12 +23,12 @@
   width: 400px
 
 .{css-prefix}required
-  box-shadow: 0 0 0 0.05em #F40000 !important;
-  border: 1px solid #D40000 !important;
-  border-radius: 2px !important;
+  box-shadow: 0 0 0 0.05em #F40000 !important
+  border: 1px solid #D40000 !important
+  border-radius: 2px !important
 
 .{css-prefix}section-custom-text-input
-  width: 580px
+  width: 450px
 
 .{css-prefix}section-calendar.{css-prefix}hide
   height: 21px
@@ -77,13 +77,13 @@
 .{css-prefix}popup-section-item
   &.{css-prefix}section-allday
     border: none
-    padding: 0 0 0 8px
+    padding: 7px 15px 7px 5px
     cursor: pointer
 
 .{css-prefix}popup-section-item
   &.{css-prefix}section-halfday
     border: none
-    padding: 0 0 0 8px
+    padding: 7px 15px 7px 5px
     cursor: pointer
 
   &.{css-prefix}section-location
@@ -157,6 +157,10 @@
   height: 30px
   outline: none
   display: inline-block
+
+.{css-prefix}popup-section-item.{css-prefix}section-custom-text-input input
+  width: 95%
+
 
 .{css-prefix}popup-section-item input::placeholder
   color: #bbbbbb
@@ -246,13 +250,13 @@
   cursor: pointer
 
 .{css-prefix}section-calendar .{css-prefix}dropdown-menu-item
-  width: 100%;
+  width: 100%
 
 .{css-prefix}section-custom-selection .{css-prefix}custom-dropdown-menu-item
-  width: 100%;
+  width: 100%
 
 .{css-prefix}section-state .{css-prefix}dropdown-menu-item
-  width: 100%;
+  width: 100%
 
 .{css-prefix}dropdown-menu-item:hover
   background-color: rgba(81, 92, 230, 0.05)
@@ -396,10 +400,10 @@
   display: none
 
 .{css-prefix}icon.{css-prefix}calendar-dot
-  border-radius: 8px;
-  width: 12px;
-  height: 12px;
-  margin: 1px;
+  border-radius: 8px
+  width: 12px
+  height: 12px
+  margin: 1px
 
 input[type='checkbox'].{css-prefix}checkbox-square
   display: none
@@ -441,7 +445,7 @@ input[type='checkbox'].{css-prefix}checkbox-round + span
   border: none
   top: 0
 
-.{css-prefix}popup-detail .{css-prefix}popup-container
+.{css-prefix}popup.{css-prefix}popup-detail
   width: 325px
   min-width: 325px
   padding-bottom: 0
@@ -530,9 +534,3 @@ input[type='checkbox'].{css-prefix}checkbox-round + span
   vertical-align: middle
   display: inline-block
   margin-top: -7px
-
-/* override tui-date-picker */
-.tui-datepicker
-  left: -12px
-  z-index: 1
-  border-color: #d5d5d5

@@ -230,7 +230,7 @@ module.exports = function(baseController, layoutContainer, dragHandler, options,
     // binding create schedules event
     if (options.useCreationPopup) {
         // eslint-disable-next-line max-len
-        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.usageStatistics);
+        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.dateFormat, options.usageStatistics);
 
         onSaveNewSchedule = function(scheduleData) {
             util.extend(scheduleData, {

@@ -116,7 +116,7 @@ function createMonthView(baseController, layoutContainer, dragHandler, options) 
     // binding popup for schedules creation
     if (options.useCreationPopup) {
         // eslint-disable-next-line max-len
-        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.usageStatistics);
+        createView = new ScheduleCreationPopup(layoutContainer, baseController.calendars, options.isUserAAAdmin, options.dateFormat, options.usageStatistics);
         onSaveNewSchedule = function(scheduleData) {
             creationHandler.fire('beforeCreateSchedule', util.extend(scheduleData, {
                 useCreationPopup: true

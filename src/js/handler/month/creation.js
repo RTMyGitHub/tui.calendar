@@ -85,6 +85,8 @@ function MonthCreation(dragHandler, monthView, baseController, options) {
  * Destructor
  */
 MonthCreation.prototype.destroy = function() {
+    /* eslint-disable no-debugger, no-console */
+    console.log('Destroying Popup');
     this.dragHandler.off(this);
     this.guide.destroy();
 

@@ -6,10 +6,12 @@
 'use strict';
 
 var util = require('tui-code-snippet');
-var TZDate = require('../common/timezone').Date;
+var tz = require('../common/timezone');
 var datetime = require('../common/datetime');
 var dirty = require('../common/dirty');
 var model = require('../common/model');
+var TZDate = tz.Date;
+var MIN_TO_MS = 60 * 1000;
 
 var SCHEDULE_MIN_DURATION = datetime.MILLISECONDS_SCHEDULE_MIN_DURATION;
 
@@ -34,6 +36,37 @@ var SCHEDULE_CATEGORY = {
     /** normal schedule */
     TIME: 'time'
 };
+
+/**
+ * Get duration by primary timezone
+ * @param {Date} start render start date
+ * @param {Date} end render end date
+ * @returns {number} duration
+ */
+function getDurationByPrimaryTimezone(start, end) {
+    var checkOffset = tz.isDifferentOffsetStartAndEndTime(start.getTime(), end.getTime());
+    var isOffsetChanged = checkOffset.isOffsetChanged;
+    var duration = end - start;
+
+    if (isOffsetChanged !== 0) {
+        duration += checkOffset.offsetDiff * MIN_TO_MS;
+    }
+
+    return duration;
+}
+
+/**
+ * Get duration by native timezone
+ * @param {TZDate} start render start date
+ * @param {TZDate} end render end date
+ * @returns {number} duration
+ */
+function getDurationByNativeTimezone(start, end) {
+    var startOffset = start.toDate().getTimezoneOffset();
+    var endOffset = end.toDate().getTimezoneOffset();
+
+    return (end - start) + ((endOffset - startOffset) * MIN_TO_MS);
+}
 
 /**
  * The model of calendar schedules.
@@ -292,12 +325,22 @@ Schedule.prototype.init = function(options) {
 };
 
 Schedule.prototype.setAllDayPeriod = function(start, end) {
-    /* eslint-disable no-debugger, no-console */
-    console.log('Schedule Start and End');
-    console.log(start, end);
-    this.start = datetime.start(new TZDate(start || Date.now()));
-    this.end = datetime.end(new TZDate(end || this.start));
-    console.log(this.start, this.end);
+    // If it is an all-day schedule, only the date information of the string is used.
+    if (util.isString(start) && start.length === 10) {
+        start = datetime.parse(start);
+    } else {
+        start = new TZDate(start || Date.now());
+    }
+
+    if (util.isString(end) && end.length === 10) {
+        end = datetime.parse(end);
+        end.setHours(23, 59, 59);
+    } else {
+        end = new TZDate(end || start);
+    }
+
+    this.start = datetime.start(start);
+    this.end = datetime.renderEnd(start, end);
 };
 
 Schedule.prototype.setTimePeriod = function(start, end) {
@@ -390,9 +433,14 @@ Schedule.prototype.duration = function() {
     var start = this.getStarts(),
         end = this.getEnds(),
         duration;
+    var hasPrimaryTimezoneCustomSetting = tz.hasPrimaryTimezoneCustomSetting();
 
     if (this.isAllDay) {
         duration = datetime.end(end) - datetime.start(start);
+    } else if (hasPrimaryTimezoneCustomSetting && tz.isPrimaryUsingDSTTimezone()) {
+        duration = getDurationByPrimaryTimezone(start, end);
+    } else if (hasPrimaryTimezoneCustomSetting && tz.isNativeOsUsingDSTTimezone()) {
+        duration = getDurationByNativeTimezone(start, end);
     } else {
         duration = end - start;
     }
@@ -429,9 +477,11 @@ Schedule.prototype.collidesWith = function(schedule) {
     start -= goingDuration;
     end += comingDuration;
 
-    if ((start > ownStarts && start < ownEnds) ||
+    if (
+        (start > ownStarts && start < ownEnds) ||
         (end > ownStarts && end < ownEnds) ||
-        (start <= ownStarts && end >= ownEnds)) {
+        (start <= ownStarts && end >= ownEnds)
+    ) {
         return true;
     }
 

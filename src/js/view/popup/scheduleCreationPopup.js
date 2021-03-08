@@ -24,13 +24,11 @@ var MAX_WEEK_OF_MONTH = 6;
  * @param {HTMLElement} container - container element
  * @param {Array.<Calendar>} calendars - calendar list used to create new schedule
  * @param {boolean} isUserAAAdmin - If the User Logged in is an Agile Apps Admin
+ * @param {string} dateFormat - User's preferred date format in Agile Apps
  * @param {boolean} usageStatistics - GA tracking options in Calendar
  */
-function ScheduleCreationPopup(container, calendars, isUserAAAdmin, usageStatistics) {
+function ScheduleCreationPopup(container, calendars, isUserAAAdmin, dateFormat, usageStatistics) {
     var popUpCalendars;
-    /* eslint-disable no-debugger, no-console */
-    console.log('Init a Popup Instance');
-    console.log(isUserAAAdmin);
     View.call(this, container);
     /**
      * @type {FloatingLayer}
@@ -43,6 +41,7 @@ function ScheduleCreationPopup(container, calendars, isUserAAAdmin, usageStatist
      */
     this._viewModel = null;
     this.isUserAAAdmin = isUserAAAdmin;
+    this.dateFormat = dateFormat;
     this._selectedCal = null;
     this._customSelection = null;
     this._schedule = null;
@@ -50,6 +49,7 @@ function ScheduleCreationPopup(container, calendars, isUserAAAdmin, usageStatist
         {'reason': 'Reason For Out Of Office'},
         {'reason': 'Bereavement'},
         {'reason': 'Floating Holiday'},
+        {'reason': 'Holiday'},
         {'reason': 'Jury Duty'},
         {'reason': 'Offsite'},
         {'reason': 'Other'},
@@ -354,8 +354,8 @@ ScheduleCreationPopup.prototype._onClickSaveSchedule = function(target) {
     }
 
     // title = domutil.get(cssPrefix + 'schedule-title');
-    startDate = new TZDate(this.rangePicker.getStartDate()).toLocalTime();
-    endDate = new TZDate(this.rangePicker.getEndDate()).toLocalTime();
+    startDate = new TZDate(this.rangePicker.getStartDate());
+    endDate = new TZDate(this.rangePicker.getEndDate());
     customSelection = domutil.get(cssPrefix + 'schedule-custom-selection');
     customTextInput = domutil.get(cssPrefix + 'schedule-custom-text-input');
     calendarName = this._selectedCal ? this._selectedCal.name : null;
@@ -404,12 +404,10 @@ ScheduleCreationPopup.prototype._onClickSaveSchedule = function(target) {
  */
 ScheduleCreationPopup.prototype.render = function(viewModel) {
     var calendars = this.calendars;
+    var dateFormat = this.dateFormat;
     var layer = this.layer;
     var self = this;
     var boxElement, guideElements;
-    /* eslint-disable no-debugger, no-console */
-    console.log('Initial View Model');
-    console.log(viewModel);
     viewModel.zIndex = this.layer.zIndex + 5;
     viewModel.calendars = calendars;
     viewModel.customSelectionList = this._customSelectionList;
@@ -430,7 +428,7 @@ ScheduleCreationPopup.prototype.render = function(viewModel) {
     console.log('View Model after changes');
     console.log(viewModel);
     layer.setContent(tmpl(viewModel));
-    this._createDatepicker(viewModel.start, viewModel.end, true);
+    this._createDatepicker(viewModel.start, viewModel.end, dateFormat, true);
     layer.show();
 
     if (boxElement) {
@@ -649,7 +647,7 @@ ScheduleCreationPopup.prototype._getXAndArrowLeft = function(
 };
 
 /**
- * Calculate rendering position usering guide elements
+ * Calculate rendering position using guide elements
  * @param {{width: {number}, height: {number}}} layerSize - popup layer's width and height
  * @param {{top: {number}, left: {number}, right: {number}, bottom: {number}}} containerBound - width and height of the upper layer, that acts as a border of popup
  * @param {{top: {number}, left: {number}, right: {number}, bottom: {number}}} guideBound - guide element bound data
@@ -711,11 +709,17 @@ ScheduleCreationPopup.prototype._setArrowDirection = function(arrow) {
  * Create date range picker using start date and end date
  * @param {TZDate} start - start date
  * @param {TZDate} end - end date
+ * @param {string} dateFormat - date format
  * @param {boolean} isAllDay - isAllDay
  */
-ScheduleCreationPopup.prototype._createDatepicker = function(start, end, isAllDay) {
+ScheduleCreationPopup.prototype._createDatepicker = function(start, end, dateFormat, isAllDay) {
     var cssPrefix = config.cssPrefix;
-
+    var dFormat;
+    if (dateFormat) {
+        dFormat = dateFormat;
+    } else {
+        dFormat = isAllDay ? 'yyyy-MM-dd' : 'yyyy-MM-dd HH:mm';
+    }
     this.rangePicker = DatePicker.createRangePicker({
         startpicker: {
             date: new TZDate(start).toDate(),
@@ -727,7 +731,7 @@ ScheduleCreationPopup.prototype._createDatepicker = function(start, end, isAllDa
             input: '#' + cssPrefix + 'schedule-end-date',
             container: '#' + cssPrefix + 'endpicker-container'
         },
-        format: isAllDay ? 'yyyy-MM-dd' : 'yyyy-MM-dd HH:mm',
+        format: dFormat,
         timepicker: isAllDay ? null : {
             showMeridiem: false,
             usageStatistics: this._usageStatistics
@@ -849,7 +853,7 @@ ScheduleCreationPopup.prototype._onClickUpdateSchedule = function(form) {
         ['calendarId', 'customSelection', 'customTextInput', 'start', 'end', 'isAllDay', 'isHalfDay'],
         {
             calendarId: form.calendarId,
-            customSelection: form.customSelection.value,
+            customSelection: form.customSelection.innerText,
             customTextInput: form.customTextInput.value,
             /*
             title: form.title.value,
@@ -862,7 +866,6 @@ ScheduleCreationPopup.prototype._onClickUpdateSchedule = function(form) {
             isHalfDay: form.isHalfDay
         }
     );
-
     /**
      * @event ScheduleCreationPopup#beforeUpdateSchedule
      * @type {object}

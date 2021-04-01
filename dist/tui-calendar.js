@@ -1,6 +1,6 @@
 /*!
  * TOAST UI Calendar
- * @version 1.12.13 | Tue Feb 23 2021
+ * @version 1.12.13 | Fri Mar 12 2021
  * @author NHN FE Development Lab <dl_javascript@nhn.com>
  * @license MIT
  */
@@ -20105,10 +20105,20 @@ function ScheduleCreationPopup(container, calendars, isUserAAAdmin, dateFormat, 
         {'reason': 'Training'}
     ];
     if (!this.isUserAAAdmin) {
+        this._customSelectionList = [
+            {'reason': 'Reason For Out Of Office'},
+            {'reason': 'Bereavement'},
+            {'reason': 'Floating Holiday'},
+            {'reason': 'Jury Duty'},
+            {'reason': 'Offsite'},
+            {'reason': 'Other'},
+            {'reason': 'PTO'},
+            {'reason': 'Sick'},
+            {'reason': 'Training'}
+        ];
         popUpCalendars = JSON.parse(JSON.stringify(calendars));
         popUpCalendars.forEach(function(calendar, index, object) {
             if (calendar.name === 'Holidays') {
-                console.log(index);
                 object.splice(index, 1);
             }
         });
@@ -20408,9 +20418,7 @@ ScheduleCreationPopup.prototype._onClickSaveSchedule = function(target) {
     calendarName = this._selectedCal ? this._selectedCal.name : null;
     /* eslint-disable no-debugger, no-console */
     console.log('Before Saving Schedule, Printing time');
-    console.log(startDate);
-    console.log(endDate);
-    console.log(calendarName);
+    console.log('Testing Caching issue');
     if (!this._validateForm(customSelection, customTextInput, startDate, endDate, calendarName)) {
         return false;
     }

@@ -55,7 +55,10 @@ function ScheduleCreationPopup(container, calendars, isUserAAAdmin, dateFormat, 
         {'reason': 'Other'},
         {'reason': 'PTO'},
         {'reason': 'Sick'},
-        {'reason': 'Training'}
+        {'reason': 'Training'},
+        {'reason': 'Work From Home'},
+        {'reason': 'Disability'},
+        {'reason': 'Family Leave'}
     ];
     if (!this.isUserAAAdmin) {
         this._customSelectionList = [
@@ -67,7 +70,10 @@ function ScheduleCreationPopup(container, calendars, isUserAAAdmin, dateFormat, 
             {'reason': 'Other'},
             {'reason': 'PTO'},
             {'reason': 'Sick'},
-            {'reason': 'Training'}
+            {'reason': 'Training'},
+            {'reason': 'Work From Home'},
+            {'reason': 'Disability'},
+            {'reason': 'Family Leave'}
         ];
         popUpCalendars = JSON.parse(JSON.stringify(calendars));
         popUpCalendars.forEach(function(calendar, index, object) {
